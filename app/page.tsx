@@ -1,64 +1,144 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
+import { Menu } from "lucide-react";
+import { AppSidebar } from "@/components/app-sidebar";
+import { MapSearchBar } from "@/components/map-search-bar";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import type { Venue } from "@/components/venue-card";
+
+const VenueMap = dynamic(
+  () => import("@/components/venue-map").then((mod) => mod.VenueMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex size-full items-center justify-center bg-muted"
+        role="status"
+        aria-label="Loading map"
+      >
+        <p className="text-sm text-muted-foreground">Loading map...</p>
+      </div>
+    ),
+  },
+);
+
+const VENUES: Venue[] = [
+  {
+    id: "1",
+    name: "Condado Tacos",
+    address: "401 E Liberty St #200",
+    city: "Ann Arbor",
+    state: "MI",
+    zip: "48104",
+    reviewCount: 3,
+    imageUrl:
+      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-JZpwo9iKYkERZzsXyHovMpxHNh6LkG.png",
+    imageAlt: "Interior of Condado Tacos restaurant with vibrant decor",
+    lat: 42.2808,
+    lng: -83.7462,
+    description: "Ultimate Queso & Guac Flight",
+  },
+  {
+    id: "2",
+    name: "Ashley's",
+    address: "338 S State St",
+    city: "Ann Arbor",
+    state: "MI",
+    zip: "48104",
+    reviewCount: 5,
+    imageUrl:
+      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-JZpwo9iKYkERZzsXyHovMpxHNh6LkG.png",
+    imageAlt: "Interior of Ashley's restaurant with warm ambient lighting",
+    lat: 42.2776,
+    lng: -83.7409,
+    description: "Order Mains, Small Plates, Specialty Food",
+  },
+];
+
+export default function HomePage() {
+  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentPage] = useState(0);
+  const isMobile = useIsMobile();
+
+  const handleSelectVenue = useCallback((venue: Venue) => {
+    setSelectedVenue((prev) => (prev?.id === venue.id ? null : venue));
+    setMobileMenuOpen(false);
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="flex h-dvh w-full flex-col lg:flex-row">
+      {/* Desktop sidebar */}
+      <div className="hidden w-80 shrink-0 border-r border-border lg:flex xl:w-96">
+        <AppSidebar
+          venues={VENUES}
+          selectedVenue={selectedVenue}
+          onSelectVenue={handleSelectVenue}
+          currentPage={currentPage}
+          totalPages={1}
+          totalResults={VENUES.length}
+          onPageChange={() => {}}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </div>
+
+      {/* Mobile sheet */}
+      <Sheet open={isMobile && mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="left" className="z-1200 w-80 p-0 sm:max-w-80">
+          <SheetTitle className="sr-only">Recent Searches</SheetTitle>
+          <SheetDescription className="sr-only">
+            Browse your recent venue searches and select one to view on the map.
+          </SheetDescription>
+          <AppSidebar
+            venues={VENUES}
+            selectedVenue={selectedVenue}
+            onSelectVenue={handleSelectVenue}
+            currentPage={currentPage}
+            totalPages={1}
+            totalResults={VENUES.length}
+            onPageChange={() => {}}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* Map area */}
+      <main id="main-content" className="relative flex-1">
+        {/* Search bar overlay */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-1100 flex items-start justify-between gap-3 p-4">
+          {/* Mobile menu toggle */}
+          <Button
+            variant="outline"
+            size="icon-lg"
+            aria-label="Open venue list"
+            className="pointer-events-auto size-12 shrink-0 rounded-lg bg-card shadow-md lg:hidden"
+            onClick={() => setMobileMenuOpen(true)}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <Menu className="size-5 text-foreground" />
+          </Button>
+
+          <div className="pointer-events-auto flex-1">
+            <MapSearchBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
         </div>
+
+        {/* Map */}
+        <VenueMap
+          venues={VENUES}
+          selectedVenue={selectedVenue}
+          onSelectVenue={handleSelectVenue}
+        />
       </main>
     </div>
   );
