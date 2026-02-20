@@ -8,13 +8,24 @@ export async function GET(request: Request) {
     // 1. Get latitude and longitude from the URL
     const lat = searchParams.get('lat');
     const lon = searchParams.get('lon');
+    const amenity = searchParams.get('amenity');
 
-    if (!searchTerm) {
-      return NextResponse.json({ error: "Search term is required" }, { status: 400 });
+    if (!searchTerm && !amenity) {
+      return NextResponse.json({ error: "Either search term (q) or amenity type is required" }, { status: 400 });
     }
 
-    // 2. Base URL for OpenStreetMap
-    let osmUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&limit=10`;
+    // 2. Build search query with optional amenity filter
+    let searchQuery = '';
+    if (amenity) {
+      searchQuery = `[amenity=${amenity}]`;
+      if (searchTerm) {
+        searchQuery += ` ${searchTerm}`;
+      }
+    } else {
+      searchQuery = searchTerm!;
+    }
+    
+    let osmUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=10`;
 
     // 3. If coordinates exist, add a "viewbox" (a 0.1 degree box around the point)
     if (lat && lon) {
