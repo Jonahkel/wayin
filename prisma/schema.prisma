@@ -13,23 +13,41 @@ datasource db {
   provider = "postgresql"
 }
 
-// Gemini-generated starter models
+model User {
+  id              Int      @id @default(autoincrement())
+  username        String   @unique
+  profileImageUrl String?
+  reviews         Review[]
+}
 
 model Location {
   id           Int      @id @default(autoincrement())
+  reviewCount  Int
   name         String
   address      String
+  city         String
+  state        String
+  zip          String
   latitude     Float
   longitude    Float
-  hasRamp      Boolean  @default(false)
-  hasElevator  Boolean  @default(false)
   reviews      Review[]
 }
 
 model Review {
   id          Int      @id @default(autoincrement())
-  rating      Int
-  comment     String
+  title       String?
+  // we can add a check to make sure either comment or review is present in the future
+  // right now they're both optional (a review with neither could be stored)
+  // i didn't want to mess with the fields too much yet
+  rating      Int?
+  comment     String?
+  userId      Int
+  user       User     @relation(fields: [userId], references: [id])
   locationId  Int
   location    Location @relation(fields: [locationId], references: [id])
+  createdAt  DateTime @default(now())
+
+  // not sure if we want to limit one review per location per user, if so use this:
+  // @@unique([userId, locationId])
+  // if we do this, we likely would need to allow edits to existing reviews
 }

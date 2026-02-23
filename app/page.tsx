@@ -7,6 +7,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { MapSearchBar } from "@/components/map-search-bar";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getVenues } from "@/lib/data";
+import { useEffect } from "react";
+
 import {
   Sheet,
   SheetContent,
@@ -31,40 +34,8 @@ const VenueMap = dynamic(
   },
 );
 
-const VENUES: Venue[] = [
-  {
-    id: "1",
-    name: "Condado Tacos",
-    address: "401 E Liberty St #200",
-    city: "Ann Arbor",
-    state: "MI",
-    zip: "48104",
-    reviewCount: 3,
-    imageUrl:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-JZpwo9iKYkERZzsXyHovMpxHNh6LkG.png",
-    imageAlt: "Interior of Condado Tacos restaurant with vibrant decor",
-    lat: 42.2808,
-    lng: -83.7462,
-    description: "Ultimate Queso & Guac Flight",
-  },
-  {
-    id: "2",
-    name: "Ashley's",
-    address: "338 S State St",
-    city: "Ann Arbor",
-    state: "MI",
-    zip: "48104",
-    reviewCount: 5,
-    imageUrl:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-JZpwo9iKYkERZzsXyHovMpxHNh6LkG.png",
-    imageAlt: "Interior of Ashley's restaurant with warm ambient lighting",
-    lat: 42.2776,
-    lng: -83.7409,
-    description: "Order Mains, Small Plates, Specialty Food",
-  },
-];
-
 export default function HomePage() {
+  const [venues, setVenues] = useState<Venue[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -76,17 +47,27 @@ export default function HomePage() {
     setMobileMenuOpen(false);
   }, []);
 
+  useEffect(() => {
+    const loadVenues = async () => {
+      const data = await getVenues();
+      setVenues(data);
+    };
+
+    loadVenues();
+  }, []);
+
+
   return (
     <div className="flex h-dvh w-full flex-col lg:flex-row">
       {/* Desktop sidebar */}
       <div className="hidden w-80 shrink-0 border-r border-border lg:flex xl:w-96">
         <AppSidebar
-          venues={VENUES}
+          venues={venues}
           selectedVenue={selectedVenue}
           onSelectVenue={handleSelectVenue}
           currentPage={currentPage}
           totalPages={1}
-          totalResults={VENUES.length}
+          totalResults={venues.length}
           onPageChange={() => {}}
         />
       </div>
@@ -99,12 +80,12 @@ export default function HomePage() {
             Browse your recent venue searches and select one to view on the map.
           </SheetDescription>
           <AppSidebar
-            venues={VENUES}
+            venues={venues}
             selectedVenue={selectedVenue}
             onSelectVenue={handleSelectVenue}
             currentPage={currentPage}
             totalPages={1}
-            totalResults={VENUES.length}
+            totalResults={venues.length}
             onPageChange={() => {}}
           />
         </SheetContent>
@@ -135,7 +116,7 @@ export default function HomePage() {
 
         {/* Map */}
         <VenueMap
-          venues={VENUES}
+          venues={venues}
           selectedVenue={selectedVenue}
           onSelectVenue={handleSelectVenue}
         />
