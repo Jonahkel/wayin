@@ -7,8 +7,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { MapSearchBar } from "@/components/map-search-bar";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getVenues } from "@/lib/data";
+import { getVenues} from "@/lib/data";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   Sheet,
@@ -37,15 +38,26 @@ const VenueMap = dynamic(
 export default function HomePage() {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [currentPage] = useState(0);
+  const currentPage = 0;
   const isMobile = useIsMobile();
+  const router = useRouter();
+
 
   const handleSelectVenue = useCallback((venue: Venue) => {
     setSelectedVenue((prev) => (prev?.id === venue.id ? null : venue));
     setMobileMenuOpen(false);
   }, []);
+
+  const handleSearchSubmit = () => {
+    if (!searchInput.trim()) return;
+
+    const params = new URLSearchParams();
+    params.append("q", searchInput);
+
+    router.push(`/search?${params.toString()}`);
+};
 
   useEffect(() => {
     const loadVenues = async () => {
@@ -55,6 +67,7 @@ export default function HomePage() {
 
     loadVenues();
   }, []);
+
 
 
   return (
@@ -108,9 +121,11 @@ export default function HomePage() {
 
           <div className="pointer-events-auto flex-1">
             <MapSearchBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
+              searchQuery={searchInput}
+              onSearchChange={setSearchInput}
+              onSearchSubmit={handleSearchSubmit}
             />
+
           </div>
         </div>
 
