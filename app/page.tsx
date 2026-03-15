@@ -43,7 +43,6 @@ export default function HomePage() {
   const isMobile = useIsMobile();
   const router = useRouter();
 
-
   const handleSelectVenue = useCallback((venue: Venue) => {
     setSelectedVenue((prev) => (prev?.id === venue.id ? null : venue));
     setMobileMenuOpen(false);
@@ -51,17 +50,17 @@ export default function HomePage() {
 
   const handleSearchSubmit = () => {
     if (!searchInput.trim()) return;
-
     const params = new URLSearchParams();
     params.append("q", searchInput);
-
     router.push(`/search?${params.toString()}`);
-};
+  };
 
   return (
-    <div className="flex h-dvh w-full flex-col lg:flex-row">
-      {/* Desktop sidebar */}
-      <div className="hidden w-80 shrink-0 border-r border-border lg:flex xl:w-96">
+    // overflow-hidden prevents the whole page from scrolling if the content inside grows
+    <div className="flex h-dvh w-full flex-col overflow-hidden lg:flex-row">
+      
+      {/* Desktop sidebar - Added h-full and overflow-y-auto */}
+      <div className="hidden h-full w-80 shrink-0 overflow-y-auto border-r border-border lg:flex xl:w-96">
         <AppSidebar
           venues={recentVenues}
           selectedVenue={selectedVenue}
@@ -78,17 +77,20 @@ export default function HomePage() {
         <SheetContent side="left" className="z-1200 w-80 p-0 sm:max-w-80">
           <SheetTitle className="sr-only">Recent Searches</SheetTitle>
           <SheetDescription className="sr-only">
-            Browse your recent venue searches and select one to view on the map.
+            Browse your recent venue searches.
           </SheetDescription>
-          <AppSidebar
-            venues={recentVenues}
-            selectedVenue={selectedVenue}
-            onSelectVenue={handleSelectVenue}
-            currentPage={currentPage}
-            totalPages={1}
-            totalResults={recentVenues.length}
-            onPageChange={() => {}}
-          />
+          {/* Ensure the sidebar inside the sheet is also scrollable if it's long */}
+          <div className="h-full overflow-y-auto">
+            <AppSidebar
+              venues={recentVenues}
+              selectedVenue={selectedVenue}
+              onSelectVenue={handleSelectVenue}
+              currentPage={currentPage}
+              totalPages={1}
+              totalResults={recentVenues.length}
+              onPageChange={() => {}}
+            />
+          </div>
         </SheetContent>
       </Sheet>
 
@@ -96,7 +98,6 @@ export default function HomePage() {
       <main id="main-content" className="relative flex-1">
         {/* Search bar overlay */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-1100 flex items-start justify-between gap-3 p-4">
-          {/* Mobile menu toggle */}
           <Button
             variant="outline"
             size="icon-lg"
@@ -113,16 +114,17 @@ export default function HomePage() {
               onSearchChange={setSearchInput}
               onSearchSubmit={handleSearchSubmit}
             />
-
           </div>
         </div>
 
-        {/* Map */}
-        <VenueMap
-          venues={recentVenues}
-          selectedVenue={selectedVenue}
-          onSelectVenue={handleSelectVenue}
-        />
+        {/* Map - size-full ensures it fills the flex-1 area */}
+        <div className="size-full">
+            <VenueMap
+            venues={recentVenues}
+            selectedVenue={selectedVenue}
+            onSelectVenue={handleSelectVenue}
+            />
+        </div>
       </main>
     </div>
   );
