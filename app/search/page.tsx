@@ -1,5 +1,7 @@
 import { headers } from "next/headers";
-import SearchResultItem from "@/components/SearchResultItem"; // Import the client component
+import { DoorOpen, UserCircle, Search, SlidersHorizontal } from "lucide-react";
+import SearchResultItem from "@/components/SearchResultItem";
+import { Button } from "@/components/ui/button";
 
 export default async function SearchPage({
   searchParams,
@@ -18,25 +20,57 @@ export default async function SearchPage({
     if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
     data = await res.json();
   } catch (error) {
-    errorMessage = "Something went wrong while fetching search results.";
+    errorMessage = "Something went wrong.";
   }
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1 style={{ fontSize: "28px", marginBottom: "8px" }}>Search Results</h1>
-      <p style={{ marginBottom: "24px", color: "#666" }}>
-        Showing results for: <strong>{q}</strong>
-      </p>
+    <div className="min-h-screen bg-white font-sans text-slate-900">
+      {/* Navbar */}
+      <header className="flex items-center justify-between border-b px-6 py-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          <DoorOpen className="size-8 text-slate-700" />
+          <span className="text-2xl font-semibold tracking-tight">WayIn</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <button className="text-lg font-medium hover:underline">Home</button>
+          <UserCircle className="size-9 text-slate-700" />
+        </div>
+      </header>
 
-      {errorMessage && <div style={{ color: "red" }}>{errorMessage}</div>}
+      <main className="mx-auto max-w-7xl p-8">
+        {/* Search Section */}
+        <div className="mb-8 flex items-center gap-4">
+          <div className="relative flex-1">
+            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
+              <Search className="size-5 text-slate-500" />
+            </div>
+            <input
+              type="text"
+              defaultValue={q}
+              placeholder="Search"
+              className="w-full rounded-xl bg-slate-200 py-4 pl-12 pr-4 text-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
+            />
+          </div>
+          <Button variant="ghost" size="icon" className="size-12">
+            <SlidersHorizontal className="size-6" />
+          </Button>
+        </div>
 
-      <div style={{ display: "grid", gap: "16px", maxWidth: "700px" }}>
-        {!errorMessage &&
-          data.map((item: any) => (
-            /* Use the Client Component here */
-            <SearchResultItem key={item.place_id} item={item} />
-          ))}
-      </div>
+        {/* Results Header */}
+        <h2 className="mb-6 text-2xl font-bold">
+          {data.length} {data.length === 1 ? "Result" : "Results"} for "{q}"
+        </h2>
+
+        {errorMessage && <div className="text-destructive">{errorMessage}</div>}
+
+        {/* Results List */}
+        <div className="space-y-6">
+          {!errorMessage &&
+            data.map((item: any) => (
+              <SearchResultItem key={item.place_id} item={item} />
+            ))}
+        </div>
+      </main>
     </div>
   );
 }

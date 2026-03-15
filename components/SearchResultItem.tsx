@@ -2,69 +2,111 @@
 
 import { useVenues } from "@/context/VenueContext";
 import { useRouter } from "next/navigation";
+import { PlusCircle, Star } from "lucide-react";
 import type { Venue } from "@/components/venue-card";
 
-interface SearchResultItemProps {
-  item: any; 
-}
-
-export default function SearchResultItem({ item }: SearchResultItemProps) {
+export default function SearchResultItem({ item }: { item: any }) {
   const { addVenue } = useVenues();
   const router = useRouter();
 
   const handleVenueClick = () => {
-    // OpenStreetMap puts address details in an 'address' object
     const addr = item.address || {};
-
-    // 1. Transform the API data into your 'Venue' type
     const newVenue: Venue = {
       id: item.place_id.toString(),
       name: item.name || item.display_name.split(",")[0],
       address: item.display_name,
       lat: parseFloat(item.lat),
       lng: parseFloat(item.lon),
-      
-      // Mapping address details
-      // OSM uses city/town/village/suburb depending on location density
       city: addr.city || addr.town || addr.village || addr.suburb || "Unknown City",
       state: addr.state || "N/A",
       zip: addr.postcode || "N/A",
-
       imageUrl: item.icon,
-      
-      // Default values for missing social/meta data
       reviewCount: 0,
       imageAlt: "Location Image"
     };
 
-    // 2. Add to context
     addVenue(newVenue);
-
-    // 3. Redirect home
     router.push("/");
   };
 
+  // UI Helpers
+  const name = item.name || item.display_name.split(",")[0];
+  const addressParts = item.display_name.split(",");
+  const shortAddress = addressParts.slice(1, 4).join(",");
+
   return (
-    <div
+    <div 
       onClick={handleVenueClick}
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: "10px",
-        padding: "16px",
-        background: "#fafafa",
-        cursor: "pointer",
-      }}
-      className="hover:border-primary/50 hover:bg-accent/10 transition-all shadow-sm"
+      className="grid cursor-pointer grid-cols-1 overflow-hidden rounded-2xl bg-slate-100 p-6 shadow-sm transition-all hover:ring-2 hover:ring-slate-300 md:grid-cols-[1fr_2px_1.5fr]"
     >
-      <h2 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "4px" }}>
-        {item.name || item.display_name.split(",")[0]}
-      </h2>
-      <p style={{ fontSize: "14px", color: "#666", marginBottom: "12px", lineHeight: "1.4" }}>
-        {item.display_name}
-      </p>
-      <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: "#999" }}>
-        <span className="bg-muted px-2 py-0.5 rounded">Lat: {parseFloat(item.lat).toFixed(4)}</span>
-        <span className="bg-muted px-2 py-0.5 rounded">Lon: {parseFloat(item.lon).toFixed(4)}</span>
+      {/* 1. Left Column: Venue Details */}
+      <div className="flex flex-col justify-between pr-8">
+        <div>
+          <h3 className="text-2xl font-bold text-slate-800">{name}</h3>
+          <p className="mt-1 text-sm text-slate-500">{shortAddress}</p>
+          
+          <div className="mt-4 flex flex-wrap gap-2">
+            {/* Fake Examples Below */}
+            {/* <Badge color="bg-rose-900">Wheelchair Access</Badge>
+            <Badge color="bg-orange-200 text-orange-900">Menu Readability</Badge>
+            <Badge color="bg-slate-900">Service Animal Access</Badge> */}
+          </div>
+        </div>
+
+        <div className="mt-6 flex items-center gap-2 font-medium text-slate-700">
+          <PlusCircle className="size-6" />
+          <span>"PLZ CONNECT TO DB TO GET NUMBER YALL" Reviews</span>
+        </div>
+      </div>
+
+      {/* 2. Vertical Divider */}
+      <div className="hidden bg-slate-300 md:block" />
+
+      {/* 3. Right Column: Reviews (Mocked) */}
+      {/* Fake Examples Below */}
+      {/* <div className="space-y-6 pl-0 pt-6 md:pl-8 md:pt-0">
+        <ReviewPreview 
+          userColor="bg-orange-400"
+          title="No Ramp!" 
+          rating={1} 
+          tag="Wheelchair Access" 
+          text="There is no ramp to enter the building. Stairs only."
+        />
+        <ReviewPreview 
+          userColor="bg-blue-400"
+          title="Loud Music" 
+          rating={4} 
+          tag="Noise Levels" 
+          text="The music is a bit loud, but the atmosphere is great."
+        />
+      </div> */}
+    </div>
+  );
+}
+
+function Badge({ children, color }: { children: React.ReactNode; color: string }) {
+  return (
+    <span className={`rounded-md px-3 py-1 text-xs font-bold text-white ${color}`}>
+      {children}
+    </span>
+  );
+}
+
+function ReviewPreview({ userColor, title, rating, tag, text }: any) {
+  return (
+    <div className="flex gap-3">
+      <div className={`size-8 shrink-0 rounded-full ${userColor}`} />
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-bold">{title}</h4>
+          <div className="flex">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className={`size-3 ${i < rating ? "fill-slate-700 text-slate-700" : "text-slate-300"}`} />
+            ))}
+          </div>
+        </div>
+        <p className="text-[10px] font-bold text-rose-900 uppercase tracking-tight">{tag}</p>
+        <p className="mt-1 text-xs leading-relaxed text-slate-600 line-clamp-2">{text}</p>
       </div>
     </div>
   );
