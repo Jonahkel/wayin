@@ -12,7 +12,7 @@ export default function SearchResultItem({ item }: { item: any }) {
   const handleVenueClick = () => {
     const addr = item.address || {};
     const newVenue: Venue = {
-      id: item.place_id.toString(),
+      id: item.osm_type.charAt(0).toUpperCase() + item.osm_id.toString(), // allows for the /lookup API call
       name: item.name || item.display_name.split(",")[0],
       address: item.display_name,
       lat: parseFloat(item.lat),
@@ -26,7 +26,8 @@ export default function SearchResultItem({ item }: { item: any }) {
     };
 
     addVenue(newVenue);
-    router.push("/");
+    console.log(newVenue.id);
+    router.push(`/venue/${newVenue.id}`);
   };
 
   // UI Helpers
