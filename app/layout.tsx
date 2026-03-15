@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ENABLE_WAYIN_THEME } from "@/lib/theme-config";
+import { VenueProvider } from "@/context/VenueContext";
 // import { Analytics } from '@vercel/analytics/next'
 import "./globals.css";
 
@@ -55,7 +56,9 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        {children}
+        <VenueProvider>
+          {children}
+        </VenueProvider>
         {/* <Analytics /> */}
       </body>
     </html>

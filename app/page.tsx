@@ -7,9 +7,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { MapSearchBar } from "@/components/map-search-bar";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getVenues} from "@/lib/data";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useVenues } from "@/context/VenueContext";
 
 import {
   Sheet,
@@ -36,7 +35,7 @@ const VenueMap = dynamic(
 );
 
 export default function HomePage() {
-  const [venues, setVenues] = useState<Venue[]>([]);
+  const { recentVenues } = useVenues(); 
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -59,28 +58,17 @@ export default function HomePage() {
     router.push(`/search?${params.toString()}`);
 };
 
-  useEffect(() => {
-    const loadVenues = async () => {
-      const data = await getVenues();
-      setVenues(data);
-    };
-
-    loadVenues();
-  }, []);
-
-
-
   return (
     <div className="flex h-dvh w-full flex-col lg:flex-row">
       {/* Desktop sidebar */}
       <div className="hidden w-80 shrink-0 border-r border-border lg:flex xl:w-96">
         <AppSidebar
-          venues={venues}
+          venues={recentVenues}
           selectedVenue={selectedVenue}
           onSelectVenue={handleSelectVenue}
           currentPage={currentPage}
           totalPages={1}
-          totalResults={venues.length}
+          totalResults={recentVenues.length}
           onPageChange={() => {}}
         />
       </div>
@@ -93,12 +81,12 @@ export default function HomePage() {
             Browse your recent venue searches and select one to view on the map.
           </SheetDescription>
           <AppSidebar
-            venues={venues}
+            venues={recentVenues}
             selectedVenue={selectedVenue}
             onSelectVenue={handleSelectVenue}
             currentPage={currentPage}
             totalPages={1}
-            totalResults={venues.length}
+            totalResults={recentVenues.length}
             onPageChange={() => {}}
           />
         </SheetContent>
@@ -131,7 +119,7 @@ export default function HomePage() {
 
         {/* Map */}
         <VenueMap
-          venues={venues}
+          venues={recentVenues}
           selectedVenue={selectedVenue}
           onSelectVenue={handleSelectVenue}
         />

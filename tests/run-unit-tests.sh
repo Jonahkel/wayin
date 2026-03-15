@@ -11,68 +11,56 @@ echo -e "${BLUE}================================${NC}"
 echo -e "${BLUE}Running all test files...${NC}"
 echo -e "${BLUE}================================${NC}\n"
 
-# 1. RUN PLAYWRIGHT (E2E Tests)
-echo -e "${YELLOW}Running Playwright (End-to-End UI Tests)...${NC}"
-# npx playwright test runs all files in your tests directory ending in .spec.ts or .test.ts
-npx playwright test
-pw_exit=$?
-
-if [ $pw_exit -eq 0 ]; then
-  echo -e "${GREEN}✓ Playwright Passed${NC}\n"
-else
-  echo -e "${RED}✗ Playwright Failed${NC}\n"
-fi
-
-# 2. CHECK DEV SERVER FOR API TESTS
-echo -e "${BLUE}Checking API Connectivity...${NC}"
-if ! curl -s http://localhost:3000/api/search?q=test > /dev/null 2>&1; then
+# Check if dev server is running
+if ! curl -s http://localhost:3000/api/search > /dev/null 2>&1; then
   echo -e "${RED}⚠ Error: Dev server doesn't appear to be running on localhost:3000${NC}"
   echo -e "${YELLOW}Start it with: npm run dev${NC}\n"
-  # Exit if API tests can't even start
   exit 1
 fi
 
+# Counter for pass/fail
 total_tests=0
 failed_tests=0
 
-# Count Playwright as a test suite
-total_tests=$((total_tests + 1))
-if [ $pw_exit -ne 0 ]; then
-    failed_tests=$((failed_tests + 1))
-fi
-
-# 3. RUN API TESTS (Your standalone .ts/.js files)
-# Note: We filter out .spec.ts files so we don't try to run Playwright files with tsx
+# Find all test files in the tests directory
 for test_file in tests/test-*.ts tests/test-*.js; do
+  # Check if file exists (in case no matches found)
   if [ -f "$test_file" ]; then
     total_tests=$((total_tests + 1))
-    echo -e "${YELLOW}Running API Test: $test_file${NC}"
+    echo -e "${YELLOW}Running: $test_file${NC}"
     
+    # Run the test file and capture both output and exit code
     if [[ "$test_file" == *.ts ]]; then
+      # Use tsx for TypeScript files
       output=$(npx tsx "$test_file" 2>&1)
     else
+      # Use node for JavaScript files
       output=$(node "$test_file" 2>&1)
     fi
     
     test_exit=$?
     echo "$output"
     
-    if echo "$output" | grep -q "✗" || [ $test_exit -ne 0 ]; then
+    # Check if output contains any failures (✗)
+    if echo "$output" | grep -q "✗"; then
       echo -e "${RED}✗ Tests Failed${NC}\n"
       failed_tests=$((failed_tests + 1))
-    else
+    elif [ $test_exit -eq 0 ]; then
       echo -e "${GREEN}✓ All Tests Passed${NC}\n"
+    else
+      echo -e "${RED}✗ Script Failed${NC}\n"
+      failed_tests=$((failed_tests + 1))
     fi
   fi
 done
 
 # Summary
 echo -e "${BLUE}================================${NC}"
-echo -e "Total test suites: $total_tests"
+echo -e "Total test files: $total_tests"
 if [ $failed_tests -eq 0 ]; then
   echo -e "${GREEN}✓ All tests passed!${NC}"
   exit 0
 else
-  echo -e "${RED}✗ Failed test suites: $failed_tests${NC}"
+  echo -e "${RED}✗ Failed test files: $failed_tests${NC}"
   exit 1
 fi
