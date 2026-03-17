@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRouter } from "next/navigation";
 import { useVenues } from "@/context/VenueContext";
+import { useEffect } from "react";
 
 import {
   Sheet,
@@ -36,6 +37,8 @@ const VenueMap = dynamic(
 
 export default function HomePage() {
   const { recentVenues } = useVenues(); 
+  const [lat, setLat] = useState<number | null>(null);
+  const [lon, setLon] = useState<number | null>(null);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -43,15 +46,47 @@ export default function HomePage() {
   const isMobile = useIsMobile();
   const router = useRouter();
 
+  const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      console.log("Geolocation not supported");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        console.log("Location:", position.coords);
+        setLat(position.coords.latitude);
+        setLon(position.coords.longitude);
+      },
+      (error) => {
+        console.log("Location error:", error);
+      }
+    );
+  };
+
+  useEffect(() => {
+    getUserLocation();
+  }, []);
+
   const handleSelectVenue = useCallback((venue: Venue) => {
     setSelectedVenue((prev) => (prev?.id === venue.id ? null : venue));
     setMobileMenuOpen(false);
   }, []);
 
   const handleSearchSubmit = () => {
-    if (!searchInput.trim()) return;
     const params = new URLSearchParams();
-    params.append("q", searchInput);
+
+    if (searchInput.trim()) {
+      params.append("q", searchInput);
+    }
+
+    if (lat && lon) {
+      params.append("lat", lat.toString());
+      params.append("lon", lon.toString());
+    }
+
+    if (!searchInput.trim()) return;
+
     router.push(`/search?${params.toString()}`);
   };
 
