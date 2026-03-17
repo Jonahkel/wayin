@@ -4,7 +4,17 @@ import "dotenv/config";
 // fetch calls to the local Next dev server, and verifies the review was stored.
 
 import { PrismaClient } from "../app/generated/prisma/client";
-import { createReview, type CreateReviewInput } from "../lib/reviews";
+import {
+  createReview,
+  type CreateReviewInput,
+  getReview,
+  getReviewsByLocationId,
+  getReviewsByUserId,
+  getAllReviews,
+  updateReview,
+  type UpdateReviewInput,
+  deleteReview,
+} from "../lib/reviews";
 
 const prisma = new PrismaClient();
 
@@ -124,11 +134,124 @@ async function runTests() {
       updatedLocation?.reviewCount === 1,
       `received ${updatedLocation?.reviewCount}`
     );
+
+    // Test getReview
+    console.log("\nTesting getReview helper...\n");
+    const fetchedReview = await getReview(reviewId);
+    check("getReview returns review", !!fetchedReview && fetchedReview.id === reviewId);
+    check(
+      "getReview returns correct title",
+      fetchedReview?.title === input.title
+    );
+
+    // Test getReviewsByLocationId
+    console.log("\nTesting getReviewsByLocationId helper...\n");
+    const reviewsByLocation = await getReviewsByLocationId(locationId);
+    check(
+      "getReviewsByLocationId returns array",
+      Array.isArray(reviewsByLocation),
+      `received ${typeof reviewsByLocation}`
+    );
+    check(
+      "getReviewsByLocationId includes our review",
+      Array.isArray(reviewsByLocation) &&
+        reviewsByLocation.some((r: { id: number }) => r.id === reviewId),
+      `array length: ${Array.isArray(reviewsByLocation) ? reviewsByLocation.length : "N/A"}`
+    );
+
+    // Test getReviewsByUserId
+    console.log("\nTesting getReviewsByUserId helper...\n");
+    const reviewsByUser = await getReviewsByUserId(userId);
+    check(
+      "getReviewsByUserId returns array",
+      Array.isArray(reviewsByUser),
+      `received ${typeof reviewsByUser}`
+    );
+    check(
+      "getReviewsByUserId includes our review",
+      Array.isArray(reviewsByUser) &&
+        reviewsByUser.some((r: { id: number }) => r.id === reviewId)
+    );
+
+    // Test getAllReviews
+    console.log("\nTesting getAllReviews helper...\n");
+    const allReviews = await getAllReviews();
+    check(
+      "getAllReviews returns array",
+      Array.isArray(allReviews),
+      `received ${typeof allReviews}`
+    );
+    check(
+      "getAllReviews includes our review",
+      Array.isArray(allReviews) &&
+        allReviews.some((r: { id: number }) => r.id === reviewId)
+    );
+
+    // Test updateReview
+    console.log("\nTesting updateReview helper...\n");
+    const updateInput: UpdateReviewInput = {
+      id: reviewId,
+      title: "Updated title",
+      rating: 4,
+      comment: "Updated comment",
+    };
+    const updatedReview = await updateReview(updateInput);
+    check(
+      "updateReview returns updated review",
+      updatedReview?.title === updateInput.title
+    );
+    check(
+      "updateReview updates rating",
+      updatedReview?.rating === updateInput.rating
+    );
+    check(
+      "updateReview updates comment",
+      updatedReview?.comment === updateInput.comment
+    );
+
+    const dbUpdatedReview = await prisma.review.findUnique({
+      where: { id: reviewId },
+    });
+    check(
+      "updateReview persists to database",
+      dbUpdatedReview?.title === updateInput.title
+    );
+
+    // Test deleteReview
+    console.log("\nTesting deleteReview helper...\n");
+    const deleteResult = await deleteReview(reviewId);
+    check(
+      "deleteReview returns success message",
+      typeof deleteResult === "object" &&
+        deleteResult !== null &&
+        "message" in deleteResult
+    );
+
+    const deletedReview = await prisma.review.findUnique({
+      where: { id: reviewId },
+    });
+    check("deleteReview removes from database", deletedReview === null);
+
+    const finalLocation = await prisma.location.findUnique({
+      where: { id: locationId },
+    });
+    check(
+      "deleteReview decrements location review count",
+      finalLocation?.reviewCount === 0,
+      `received ${finalLocation?.reviewCount}`
+    );
+    reviewId = undefined; // Already deleted
   } finally {
     globalThis.fetch = originalFetch;
 
+    // Only delete review if it still exists (not already deleted by deleteReview test)
     if (reviewId !== undefined) {
-      await prisma.review.delete({ where: { id: reviewId } });
+      const reviewExists = await prisma.review.findUnique({
+        where: { id: reviewId },
+      });
+      if (reviewExists) {
+        await prisma.review.delete({ where: { id: reviewId } });
+      }
     }
 
     if (locationId !== undefined) {
