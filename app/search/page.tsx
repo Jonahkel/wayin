@@ -6,17 +6,25 @@ import { Button } from "@/components/ui/button";
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; amenity?: string; lat?: string; lon?: string }>;
 }) {
   const params = await searchParams;
   const q = params.q ?? "";
+  const lat = params.lat ?? "";
+  const lon = params.lon ?? "";
   const host = (await headers()).get("host");
 
   let data = [];
   let errorMessage = null;
 
   try {
-    const res = await fetch(`http://${host}/api/search?q=${encodeURIComponent(q)}&addressdetails=1`);
+    const query = new URLSearchParams();
+
+    if (q) query.append("q", q);
+    if (lat) query.append("lat", lat);
+    if (lon) query.append("lon", lon);
+
+    const res = await fetch(`http://${host}/api/search?${query.toString()}`);
     if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
     data = await res.json();
   } catch (error) {
