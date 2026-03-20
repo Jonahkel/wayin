@@ -73,11 +73,13 @@ export default function HomePage() {
     setMobileMenuOpen(false);
   }, []);
 
-  const handleSearchSubmit = () => {
+  const handleSearchSubmit = (override?: string) => {
+    const query = override ?? searchInput;
+
     const params = new URLSearchParams();
 
-    if (searchInput.trim()) {
-      params.append("q", searchInput);
+    if (query.trim()) {
+      params.append("q", query);
     }
 
     if (lat && lon) {
@@ -85,7 +87,7 @@ export default function HomePage() {
       params.append("lon", lon.toString());
     }
 
-    if (!searchInput.trim()) return;
+    if (!query.trim()) return;
 
     router.push(`/search?${params.toString()}`);
   };
