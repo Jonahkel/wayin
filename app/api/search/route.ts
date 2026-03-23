@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const lon = searchParams.get('lon');
     const amenity = searchParams.get('amenity');
 
-    if (!searchTerm) {
+    if (!searchTerm && !amenity) {
       return NextResponse.json(
         { error: "Either search term (q) or amenity type is required" },
         { status: 400 }
