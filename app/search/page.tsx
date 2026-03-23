@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { DoorOpen, UserCircle, Search, SlidersHorizontal } from "lucide-react";
 import SearchResultItem from "@/components/SearchResultItem";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default async function SearchPage({
   searchParams,
@@ -40,7 +41,11 @@ export default async function SearchPage({
           <span className="text-2xl font-semibold tracking-tight">WayIn</span>
         </div>
         <div className="flex items-center gap-6">
-          <button className="text-lg font-medium hover:underline">Home</button>
+          <Link href="/">
+            <button className="text-lg font-medium hover:underline">
+              Home
+            </button>
+          </Link>
           <UserCircle className="size-9 text-slate-700" />
         </div>
       </header>

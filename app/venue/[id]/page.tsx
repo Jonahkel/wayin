@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default async function VenueDetailPage({
   params,
 }: {
@@ -53,6 +55,15 @@ export default async function VenueDetailPage({
 
   return (
     <main className="mx-auto max-w-4xl p-8">
+
+      {/*home button*/}
+      <div className="mb-6">
+        <Link href="/">
+          <span className="cursor-pointer text-sm text-slate-600 hover:underline">
+            ← Back to Home
+          </span>
+        </Link>
+      </div>
       
       {/* Venue Info */}
       <h1 className="text-4xl font-bold">{name}</h1>
@@ -69,9 +80,11 @@ export default async function VenueDetailPage({
       </div>
 
       {/* ➕ Add Review Button */}
-      <button className="mt-6 rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-700">
-        Add Review
-      </button>
+      <Link href={`/venue/${id}/review`}>
+        <button className="mt-6 rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-700">
+          Add Review
+        </button>
+      </Link>
 
       {/* Reviews List */}
       <div className="mt-10 space-y-6">
