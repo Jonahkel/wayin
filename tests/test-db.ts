@@ -39,6 +39,7 @@ async function runTests() {
   console.log('\n📍 Create Location');
   const location = await prisma.location.create({
     data: {
+      id : 123,
       name: 'Test Venue',
       address: '123 Main St',
       city: 'Ann Arbor',
