@@ -3,7 +3,7 @@ import "dotenv/config";
 // This is an integration test: it creates real Prisma data, rewrites relative
 // fetch calls to the local Next dev server, and verifies the review was stored.
 
-import { PrismaClient } from "../app/generated/prisma/client";
+import { PrismaClient, Review } from "../app/generated/prisma/client";
 import {
   createReview,
   type CreateReviewInput,
@@ -50,6 +50,7 @@ async function runTests() {
 
     const location = await prisma.location.create({
       data: {
+        id: 123,
         name: "Review Helper Test Venue",
         address: "456 Test Ave",
         city: "Ann Arbor",
@@ -137,7 +138,13 @@ async function runTests() {
 
     // Test getReview
     console.log("\nTesting getReview helper...\n");
+    if (reviewId === undefined) {
+      throw new Error("reviewId is undefined, creation failed");
+    }
     const fetchedReview = await getReview(reviewId);
+    if (fetchedReview === undefined) {
+      throw new Error("reviewId is undefined, creation failed");
+    }
     check("getReview returns review", !!fetchedReview && fetchedReview.id === reviewId);
     check(
       "getReview returns correct title",

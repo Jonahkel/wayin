@@ -1,3 +1,16 @@
+import type { Prisma } from "../app/generated/prisma/client";
+
+type ReviewWithRelations = Prisma.ReviewGetPayload<{
+  include: {
+    user: true;
+    location: true;
+  };
+}>;
+
+type DeleteReviewResponse = {
+  message: string;
+};
+
 export type CreateReviewInput = {
   title?: string;
   rating?: number;
@@ -29,7 +42,7 @@ export async function createReview(input: CreateReviewInput) {
     throw new Error(message);
   }
 
-  return payload;
+  return payload as ReviewWithRelations;
 }
 
 export async function getReview(reviewId: number) {
@@ -48,7 +61,7 @@ export async function getReview(reviewId: number) {
     throw new Error(message);
   }
 
-  return payload;
+  return payload as ReviewWithRelations;
 }
 
 export async function getReviewsByLocationId(locationId: number) {
@@ -67,7 +80,7 @@ export async function getReviewsByLocationId(locationId: number) {
     throw new Error(message);
   }
 
-  return payload;
+  return payload as ReviewWithRelations[];
 }
 
 export async function getReviewsByUserId(userId: number) {
@@ -86,7 +99,7 @@ export async function getReviewsByUserId(userId: number) {
     throw new Error(message);
   }
 
-  return payload;
+  return payload as ReviewWithRelations[];
 }
 
 export async function getAllReviews() {
@@ -105,7 +118,7 @@ export async function getAllReviews() {
     throw new Error(message);
   }
 
-  return payload;
+  return payload as ReviewWithRelations[];
 }
 
 export type UpdateReviewInput = {
@@ -138,7 +151,7 @@ export async function updateReview(input: UpdateReviewInput) {
     throw new Error(message);
   }
 
-  return payload;
+  return payload as ReviewWithRelations;
 }
 
 export async function deleteReview(reviewId: number) {
@@ -160,5 +173,5 @@ export async function deleteReview(reviewId: number) {
     throw new Error(message);
   }
 
-  return payload;
+  return payload as DeleteReviewResponse;
 }
