@@ -73,13 +73,17 @@ export default function HomePage() {
     setMobileMenuOpen(false);
   }, []);
 
-  const handleSearchSubmit = (override?: string) => {
-    const query = override ?? searchInput;
-
+  const handleSearchSubmit = (options?: { queryOverride?: string; amenity?: string }) => {
+    const query = options?.queryOverride ?? searchInput;
+    const amenity = options?.amenity;
     const params = new URLSearchParams();
 
     if (query.trim()) {
       params.append("q", query);
+    }
+
+    if (amenity) {
+      params.append("amenity", amenity);
     }
 
     if (lat && lon) {
@@ -87,7 +91,7 @@ export default function HomePage() {
       params.append("lon", lon.toString());
     }
 
-    if (!query.trim()) return;
+    if (!query.trim() && !amenity) return;
 
     router.push(`/search?${params.toString()}`);
   };

@@ -11,6 +11,7 @@ export default async function SearchPage({
 }) {
   const params = await searchParams;
   const q = params.q ?? "";
+  const amenity = params.amenity ?? "";
   const lat = params.lat ?? "";
   const lon = params.lon ?? "";
   const host = (await headers()).get("host");
@@ -22,6 +23,7 @@ export default async function SearchPage({
     const query = new URLSearchParams();
 
     if (q) query.append("q", q);
+    if (amenity) query.append("amenity", amenity);
     if (lat) query.append("lat", lat);
     if (lon) query.append("lon", lon);
 
@@ -71,7 +73,7 @@ export default async function SearchPage({
 
         {/* Results Header */}
         <h2 className="mb-6 text-2xl font-bold">
-          {data.length} {data.length === 1 ? "Result" : "Results"} for "{q}"
+          {data.length} {data.length === 1 ? "Result" : "Results"} for "{q || amenity}"
         </h2>
 
         {errorMessage && <div className="text-destructive">{errorMessage}</div>}

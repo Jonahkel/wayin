@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 interface MapSearchBarProps {
   searchQuery: string
   onSearchChange: (value: string) => void
-  onSearchSubmit: (override?: string) => void
+  onSearchSubmit: (options?: { queryOverride?: string; amenity?: string }) => void
 }
 
 export function MapSearchBar({
@@ -28,7 +28,7 @@ export function MapSearchBar({
           if (!value) return
 
           onSearchChange(value)
-          onSearchSubmit(value)
+          onSearchSubmit({ queryOverride: "", amenity: value })
         }}
         className="h-12 rounded-lg border border-border bg-card px-3 text-sm shadow-md"
         defaultValue=""
