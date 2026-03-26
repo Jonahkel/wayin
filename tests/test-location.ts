@@ -1,112 +1,190 @@
-export {};
+import "dotenv/config";
 
-const BASE_URL = 'http://localhost:3000';
+import { PrismaClient } from "../app/generated/prisma/client";
+import { createReview, getReview, type CreateReviewInput } from "../lib/reviews";
 
-async function test(
-  name: string,
-  url: string,
-  expectStatus = 200,
-  validate?: (data: any) => boolean
-): Promise<boolean> {
-  try {
-    const fullUrl = BASE_URL + url;
-    console.log(`\n📍 ${name}`);
-    console.log(`   URL: ${fullUrl}`);
+const prisma = new PrismaClient();
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+let passed = 0;
+let failed = 0;
 
-    const res = await fetch(fullUrl, { 
-      signal: controller.signal,
-      headers: { "Accept": "application/json" }
-    });
-    clearTimeout(timeoutId);
-
-    const contentType = res.headers.get("content-type");
-    let data: any;
-
-    if (contentType && contentType.includes("application/json")) {
-      data = await res.json();
-    } else {
-      // If we got HTML by mistake, this captures it as a string
-      data = { message: "Received non-JSON response (likely HTML)" };
-    }
-
-    const statusPass = res.status === expectStatus;
-    const validationPass = validate ? validate(data) : true;
-    const pass = statusPass && validationPass;
-
-    console.log(`   ${statusPass ? '✅' : '❌'} Status: ${res.status} (expected ${expectStatus})`);
-    
-    if (validate) {
-      console.log(`   ${validationPass ? '✅' : '❌'} Data Validation: ${validationPass ? 'Passed' : 'Failed'}`);
-    }
-
-    return pass;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    console.log(`   ❌ Error: ${message}`);
-    return false;
+function check(name: string, condition: boolean, detail?: string) {
+  if (condition) {
+    console.log(`  ✓ ${name}`);
+    passed++;
+  } else {
+    console.log(`  ✗ ${name}${detail ? `: ${detail}` : ""}`);
+    failed++;
   }
 }
 
 async function runTests() {
-  console.log('------------------------------------------');
-  console.log('🚀 STARTING VENUE API VALIDATION');
-  console.log('------------------------------------------');
+  console.log("\nTesting review helpers against live API and direct DB reads...\n");
 
-  const results = [
-    // 1. THE PRIMARY TEST CASE: University of Michigan
-    // Updated URL to hit the API endpoint with query param
-    await test(
-      'Case: University of Michigan (R3990210)',
-      '/api/venue?id=R3990210', 
-      200,
-      (data) => {
-        // Our API returns the raw Nominatim array
-        const item = Array.isArray(data) ? data[0] : data;
-        
-        const nameMatches = 
-          item?.display_name?.toLowerCase().includes("university of michigan") || 
-          item?.name?.toLowerCase().includes("university of michigan");
-        
-        const postcodeMatches = item?.address?.postcode === "48109";
+  const originalFetch = globalThis.fetch;
+  let userId: number | undefined;
+  let locationId: number | undefined;
+  let reviewId: number | undefined;
+  const fetchUrls: string[] = [];
 
-        if (!nameMatches) console.log(`      ⚠️  Actual Name: ${item?.name || item?.display_name || 'Undefined'}`);
-        if (!postcodeMatches) console.log(`      ⚠️  Actual Postcode: ${item?.address?.postcode || 'Undefined'}`);
+  try {
+    const suffix = Date.now();
 
-        return !!(item && nameMatches && postcodeMatches);
+    const user = await prisma.user.create({
+      data: {
+        username: `test_review_compare_${suffix}`,
+        profileImageUrl: null,
+      },
+    });
+    userId = user.id;
+
+    const location = await prisma.location.create({
+      data: {
+        id: 900000000 + (suffix % 1000000),
+        name: "Review Compare Test Location",
+        address: "1 Test St",
+        city: "Ann Arbor",
+        state: "MI",
+        zip: "48104",
+        latitude: 42.2808,
+        longitude: -83.743,
+        reviewCount: 0,
+      },
+    });
+    locationId = location.id;
+
+    globalThis.fetch = (async (url: string | URL | Request, options?: RequestInit) => {
+      const fetchUrl = typeof url === "string" ? url : url.toString();
+      fetchUrls.push(fetchUrl);
+      const resolvedUrl =
+        typeof url === "string" && url.startsWith("/")
+          ? `http://localhost:3000${url}`
+          : url;
+
+      return originalFetch(resolvedUrl, options);
+    }) as typeof fetch;
+
+    const input: CreateReviewInput = {
+      title: "Function vs DB",
+      rating: 5,
+      comment: "Ensure helper response matches DB.",
+      userId,
+      locationId,
+    };
+
+    const createdByFunction = await createReview(input);
+    reviewId = createdByFunction.id;
+
+    const createdInDb = await prisma.review.findUnique({
+      where: { id: reviewId },
+      include: {
+        user: true,
+        location: true,
+      },
+    });
+
+    check(
+      "createReview posts to reviews endpoint",
+      fetchUrls.includes("/api/reviews"),
+      `received ${fetchUrls.join(", ")}`
+    );
+    check("createReview result has an id", typeof createdByFunction.id === "number");
+    check("createReview persisted review", !!createdInDb, "review was not found in database");
+    check(
+      "createReview title matches DB",
+      createdByFunction.title === createdInDb?.title,
+      `function=${createdByFunction.title}, db=${createdInDb?.title}`
+    );
+    check(
+      "createReview rating matches DB",
+      createdByFunction.rating === createdInDb?.rating,
+      `function=${createdByFunction.rating}, db=${createdInDb?.rating}`
+    );
+    check(
+      "createReview comment matches DB",
+      createdByFunction.comment === createdInDb?.comment,
+      `function=${createdByFunction.comment}, db=${createdInDb?.comment}`
+    );
+    check(
+      "createReview user relation matches DB",
+      createdByFunction.user.id === createdInDb?.user.id,
+      `function=${createdByFunction.user.id}, db=${createdInDb?.user.id}`
+    );
+    check(
+      "createReview location relation matches DB",
+      createdByFunction.location.id === createdInDb?.location.id,
+      `function=${createdByFunction.location.id}, db=${createdInDb?.location.id}`
+    );
+
+    const fetchedByFunction = await getReview(reviewId);
+    const fetchedInDb = await prisma.review.findUnique({
+      where: { id: reviewId },
+      include: {
+        user: true,
+        location: true,
+      },
+    });
+
+    check(
+      "getReview calls review endpoint by id",
+      fetchUrls.includes(`/api/reviews?id=${reviewId}`),
+      `received ${fetchUrls.join(", ")}`
+    );
+    check(
+      "getReview title matches DB",
+      fetchedByFunction.title === fetchedInDb?.title,
+      `function=${fetchedByFunction.title}, db=${fetchedInDb?.title}`
+    );
+    check(
+      "getReview rating matches DB",
+      fetchedByFunction.rating === fetchedInDb?.rating,
+      `function=${fetchedByFunction.rating}, db=${fetchedInDb?.rating}`
+    );
+    check(
+      "getReview comment matches DB",
+      fetchedByFunction.comment === fetchedInDb?.comment,
+      `function=${fetchedByFunction.comment}, db=${fetchedInDb?.comment}`
+    );
+    check(
+      "getReview user relation matches DB",
+      fetchedByFunction.user.id === fetchedInDb?.user.id,
+      `function=${fetchedByFunction.user.id}, db=${fetchedInDb?.user.id}`
+    );
+    check(
+      "getReview location relation matches DB",
+      fetchedByFunction.location.id === fetchedInDb?.location.id,
+      `function=${fetchedByFunction.location.id}, db=${fetchedInDb?.location.id}`
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+
+    if (reviewId !== undefined) {
+      const reviewExists = await prisma.review.findUnique({ where: { id: reviewId } });
+      if (reviewExists) {
+        await prisma.review.delete({ where: { id: reviewId } });
       }
-    ),
+    }
 
-    // 2. ERROR HANDLING TEST: Missing ID
-    await test(
-      'Case: Missing ID parameter',
-      '/api/venue',
-      400, // Our API returns 400 for missing ID
-      (data) => !!(data.error)
-    ),
+    if (locationId !== undefined) {
+      await prisma.location.delete({ where: { id: locationId } });
+    }
 
-    // 3. ERROR HANDLING TEST: Invalid ID
-    await test(
-      'Case: Invalid ID format',
-      '/api/venue?id=not_a_real_id',
-      404, // Our API returns 404 if Nominatim finds nothing
-      (data) => !!(data.error)
-    )
-  ];
+    if (userId !== undefined) {
+      await prisma.user.delete({ where: { id: userId } });
+    }
 
-  const passed = results.filter(r => r).length;
-  const failed = results.filter(r => !r).length;
+    await prisma.$disconnect();
+  }
 
-  console.log('\n------------------------------------------');
-  console.log('📊 TEST SUMMARY');
-  console.log(`   Total: ${results.length}`);
-  console.log(`   Passed: ${passed}`);
-  console.log(`   Failed: ${failed}`);
-  console.log('------------------------------------------\n');
+  console.log(`\n${"=".repeat(32)}`);
+  console.log(`Results: ${passed} passed, ${failed} failed`);
 
-  process.exit(failed > 0 ? 1 : 0);
+  if (failed > 0) {
+    process.exit(1);
+  }
 }
 
-runTests();
+runTests().catch((error) => {
+  console.error("\n✗ Unexpected error:", error instanceof Error ? error.message : error);
+  process.exit(1);
+});
