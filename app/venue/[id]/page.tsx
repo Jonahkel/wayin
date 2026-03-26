@@ -1,23 +1,42 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getReviewsByLocation, Review } from "@/lib/temp-review-store";
+import { useParams } from "next/navigation";
 
-export default async function VenueDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+export default function VenueDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const [venue, setVenue] = useState<any>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
 
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/lookup?osm_ids=${id}&format=json&addressdetails=1`,
-    {
-      headers: { "User-Agent": "WayIn-App-v1" },
+  useEffect(() => {
+    async function fetchVenue() {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/lookup?osm_ids=${id}&format=json&addressdetails=1`,
+        { headers: { "User-Agent": "WayIn-App-v1" } }
+      );
+
+      const response = await res.json();
+
+      if (!res.ok || response.error || response.length === 0) {
+        setVenue(null);
+        return;
+      }
+
+      setVenue(response[0]);
     }
-  );
 
-  const response = await res.json();
+    fetchVenue();
+  }, [id]);
 
-  // Error handling for the UI
-  if (!res.ok || response.error || response.length === 0) {
+  useEffect(() => {
+    const data = getReviewsByLocation(id);
+    setReviews(data);
+  }, [id]);
+
+  if (!venue) {
     return (
       <div className="p-10 text-center">
         <h1 className="text-xl font-bold">Location not found</h1>
@@ -26,32 +45,22 @@ export default async function VenueDetailPage({
     );
   }
 
-  const item = response[0];
-  const name = item.name || item.display_name || "Location Details";
-  const address = item.display_name;
-
-  // MOCK DATA (replace with DB later)
-  const reviews = [
-    {
-      id: 1,
-      rating: 4,
-      text: "Pretty accessible, but the entrance is a bit tight.",
-      tag: "Wheelchair Access",
-    },
-    {
-      id: 2,
-      rating: 2,
-      text: "No ramp available. Difficult to enter.",
-      tag: "Accessibility",
-    },
-  ];
+  const name = venue.name || venue.display_name || "Location Details";
+  const address = venue.display_name;
 
   const avgRating =
     reviews.length > 0
       ? (
-          reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+          reviews.reduce((sum, r) => sum + (r.rating ?? 0), 0) /
+          reviews.length
         ).toFixed(1)
       : null;
+  
+  const tagStyles: Record<string, string> = {
+    happy: "bg-blue-200 text-blue-900",
+    neutral: "bg-yellow-200 text-yellow-900",
+    sad: "bg-red-200 text-red-900",
+  };
 
   return (
     <main className="mx-auto max-w-4xl p-8">
@@ -105,24 +114,39 @@ export default async function VenueDetailPage({
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <span key={i}>
-                      {i < review.rating ? "⭐" : "☆"}
+                      {i < (review.rating ?? 0) ? "⭐" : "☆"}
                     </span>
                   ))}
                 </div>
                 <span className="text-sm text-slate-500">
-                  {review.rating}/5
+                  {review.rating ?? 0}/5
                 </span>
               </div>
+              
+              {review.title && (
+                <p className="mt-2 font-semibold text-slate-900">{review.title}</p>
+              )}
 
-              {/* Tag */}
-              <p className="mt-2 text-xs font-bold uppercase text-rose-900">
-                {review.tag}
-              </p>
-
-              {/* Text */}
               <p className="mt-2 text-sm text-slate-700">
-                {review.text}
+                {review.comment}
               </p>
+
+              {review.tags && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {Object.entries(review.tags).map(([tag, value]) =>
+                    value ? (
+                      <span
+                        key={tag}
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          tagStyles[value]
+                        }`}
+                      >
+                        {tag}
+                      </span>
+                    ) : null
+                  )}
+                </div>
+              )}
             </div>
           ))
         )}

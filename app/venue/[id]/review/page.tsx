@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { addReview } from "@/lib/temp-review-store"; // temp for peer review
 
 export default function AddReviewPage() {
   const router = useRouter();
@@ -41,19 +42,18 @@ export default function AddReviewPage() {
       return;
     }
 
-    const reviewData = {
-      venueId,
-      rating,
+    const newReview = {
+      id: Date.now(), // quick unique id
+      locationId: venueId,
       title,
-      text,
+      rating,
+      comment: text,
       tags,
     };
 
-    console.log("Submitting review:", reviewData);
+    addReview(newReview);
 
-    // 🔥 Later: send to DB
-
-    router.push(`/venue/${venueId}`);
+    router.replace(`/venue/${venueId}`);
   };
 
   return (
