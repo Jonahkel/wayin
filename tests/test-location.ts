@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 import { PrismaClient } from "../app/generated/prisma/client";
-import { createReview, getReview, type CreateReviewInput } from "../lib/reviews";
+import { getLocation, setLocation, type SetLocationInput } from "../lib/location";
 
 const prisma = new PrismaClient();
 
@@ -19,39 +19,16 @@ function check(name: string, condition: boolean, detail?: string) {
 }
 
 async function runTests() {
-  console.log("\nTesting review helpers against live API and direct DB reads...\n");
+  console.log("\nTesting location helpers against live API and direct DB reads...\n");
 
   const originalFetch = globalThis.fetch;
-  let userId: number | undefined;
   let locationId: number | undefined;
-  let reviewId: number | undefined;
   const fetchUrls: string[] = [];
 
   try {
-    const suffix = Date.now();
+    const suffix = Date.now() % 1000000;
 
-    const user = await prisma.user.create({
-      data: {
-        username: `test_review_compare_${suffix}`,
-        profileImageUrl: null,
-      },
-    });
-    userId = user.id;
-
-    const location = await prisma.location.create({
-      data: {
-        id: 900000000 + (suffix % 1000000),
-        name: "Review Compare Test Location",
-        address: "1 Test St",
-        city: "Ann Arbor",
-        state: "MI",
-        zip: "48104",
-        latitude: 42.2808,
-        longitude: -83.743,
-        reviewCount: 0,
-      },
-    });
-    locationId = location.id;
+    locationId = 910000000 + suffix;
 
     globalThis.fetch = (async (url: string | URL | Request, options?: RequestInit) => {
       const fetchUrl = typeof url === "string" ? url : url.toString();
@@ -64,113 +41,90 @@ async function runTests() {
       return originalFetch(resolvedUrl, options);
     }) as typeof fetch;
 
-    const input: CreateReviewInput = {
-      title: "Function vs DB",
-      rating: 5,
-      comment: "Ensure helper response matches DB.",
-      userId,
-      locationId,
+    const input: SetLocationInput = {
+      id: locationId,
+      name: "Location Helper Test Venue",
+      address: "789 Test Blvd",
+      city: "Ann Arbor",
+      state: "MI",
+      zip: "48104",
+      latitude: 42.281,
+      longitude: -83.745,
+      reviewCount: 2,
     };
 
-    const createdByFunction = await createReview(input);
-    reviewId = createdByFunction.id;
+    const createdByFunction = await setLocation(input);
 
-    const createdInDb = await prisma.review.findUnique({
-      where: { id: reviewId },
-      include: {
-        user: true,
-        location: true,
-      },
+    const createdInDb = await prisma.location.findUnique({
+      where: { id: locationId },
     });
 
     check(
-      "createReview posts to reviews endpoint",
-      fetchUrls.includes("/api/reviews"),
+      "setLocation posts to location endpoint",
+      fetchUrls.includes("/api/location"),
       `received ${fetchUrls.join(", ")}`
     );
-    check("createReview result has an id", typeof createdByFunction.id === "number");
-    check("createReview persisted review", !!createdInDb, "review was not found in database");
+    check("setLocation result has an id", typeof createdByFunction.id === "number");
+    check("setLocation persisted location", !!createdInDb, "location was not found in database");
     check(
-      "createReview title matches DB",
-      createdByFunction.title === createdInDb?.title,
-      `function=${createdByFunction.title}, db=${createdInDb?.title}`
+      "setLocation name matches DB",
+      createdByFunction.name === createdInDb?.name,
+      `function=${createdByFunction.name}, db=${createdInDb?.name}`
     );
     check(
-      "createReview rating matches DB",
-      createdByFunction.rating === createdInDb?.rating,
-      `function=${createdByFunction.rating}, db=${createdInDb?.rating}`
+      "setLocation address matches DB",
+      createdByFunction.address === createdInDb?.address,
+      `function=${createdByFunction.address}, db=${createdInDb?.address}`
     );
     check(
-      "createReview comment matches DB",
-      createdByFunction.comment === createdInDb?.comment,
-      `function=${createdByFunction.comment}, db=${createdInDb?.comment}`
+      "setLocation city matches DB",
+      createdByFunction.city === createdInDb?.city,
+      `function=${createdByFunction.city}, db=${createdInDb?.city}`
     );
     check(
-      "createReview user relation matches DB",
-      createdByFunction.user.id === createdInDb?.user.id,
-      `function=${createdByFunction.user.id}, db=${createdInDb?.user.id}`
+      "setLocation state matches DB",
+      createdByFunction.state === createdInDb?.state,
+      `function=${createdByFunction.state}, db=${createdInDb?.state}`
     );
     check(
-      "createReview location relation matches DB",
-      createdByFunction.location.id === createdInDb?.location.id,
-      `function=${createdByFunction.location.id}, db=${createdInDb?.location.id}`
+      "setLocation zip matches DB",
+      createdByFunction.zip === createdInDb?.zip,
+      `function=${createdByFunction.zip}, db=${createdInDb?.zip}`
+    );
+    check(
+      "setLocation reviewCount matches DB",
+      createdByFunction.reviewCount === createdInDb?.reviewCount,
+      `function=${createdByFunction.reviewCount}, db=${createdInDb?.reviewCount}`
     );
 
-    const fetchedByFunction = await getReview(reviewId);
-    const fetchedInDb = await prisma.review.findUnique({
-      where: { id: reviewId },
-      include: {
-        user: true,
-        location: true,
-      },
-    });
+    // getLocation reads from the API and should throw for invalid IDs.
+    // Using id=0 avoids dependence on external OSM lookups in this test.
+    let invalidIdErrorMessage = "";
+    try {
+      await getLocation(0);
+    } catch (error) {
+      invalidIdErrorMessage =
+        error instanceof Error ? error.message : String(error);
+    }
 
     check(
-      "getReview calls review endpoint by id",
-      fetchUrls.includes(`/api/reviews?id=${reviewId}`),
+      "getLocation calls location endpoint by id",
+      fetchUrls.includes("/api/location?id=0"),
       `received ${fetchUrls.join(", ")}`
     );
     check(
-      "getReview title matches DB",
-      fetchedByFunction.title === fetchedInDb?.title,
-      `function=${fetchedByFunction.title}, db=${fetchedInDb?.title}`
-    );
-    check(
-      "getReview rating matches DB",
-      fetchedByFunction.rating === fetchedInDb?.rating,
-      `function=${fetchedByFunction.rating}, db=${fetchedInDb?.rating}`
-    );
-    check(
-      "getReview comment matches DB",
-      fetchedByFunction.comment === fetchedInDb?.comment,
-      `function=${fetchedByFunction.comment}, db=${fetchedInDb?.comment}`
-    );
-    check(
-      "getReview user relation matches DB",
-      fetchedByFunction.user.id === fetchedInDb?.user.id,
-      `function=${fetchedByFunction.user.id}, db=${fetchedInDb?.user.id}`
-    );
-    check(
-      "getReview location relation matches DB",
-      fetchedByFunction.location.id === fetchedInDb?.location.id,
-      `function=${fetchedByFunction.location.id}, db=${fetchedInDb?.location.id}`
+      "getLocation throws API validation error for id=0",
+      invalidIdErrorMessage === "id must be a positive integer",
+      `received ${invalidIdErrorMessage || "no error"}`
     );
   } finally {
     globalThis.fetch = originalFetch;
 
-    if (reviewId !== undefined) {
-      const reviewExists = await prisma.review.findUnique({ where: { id: reviewId } });
-      if (reviewExists) {
-        await prisma.review.delete({ where: { id: reviewId } });
-      }
-    }
-
     if (locationId !== undefined) {
-      await prisma.location.delete({ where: { id: locationId } });
-    }
-
-    if (userId !== undefined) {
-      await prisma.user.delete({ where: { id: userId } });
+      const locationExists = await prisma.location.findUnique({ where: { id: locationId } });
+      if (locationExists) {
+        await prisma.location.delete({ where: { id: locationId } });
+      }
     }
 
     await prisma.$disconnect();
