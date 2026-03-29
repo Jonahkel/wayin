@@ -34,6 +34,14 @@ model Location {
   reviews      Review[]
 }
 
+model Tag {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  isActive    Boolean           @default(true)
+  reviewTags  ReviewTagRating[]
+}
+
+
 model Review {
   id          Int      @id @default(autoincrement())
   title       String?
@@ -47,8 +55,24 @@ model Review {
   locationId  Int
   location    Location @relation(fields: [locationId], references: [id])
   createdAt  DateTime @default(now())
+  tagRatings  ReviewTagRating[]
+
 
   // not sure if we want to limit one review per location per user, if so use this:
   // @@unique([userId, locationId])
   // if we do this, we likely would need to allow edits to existing reviews
+}
+
+model ReviewTagRating {
+  id         Int      @id @default(autoincrement())
+  reviewId   Int
+  tagId      Int
+  rating     Int      // enforce 1-3 in app validation (or DB check constraint)
+  createdAt  DateTime @default(now())
+
+  review     Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id])
+
+  @@unique([reviewId, tagId]) // one rating per tag per review
+  @@index([tagId, rating])    // useful for filtering
 }
