@@ -7,7 +7,12 @@ import Link from "next/link";
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; amenity?: string; lat?: string; lon?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    amenity?: string;
+    lat?: string;
+    lon?: string;
+  }>;
 }) {
   const params = await searchParams;
   const q = params.q ?? "";
@@ -54,26 +59,43 @@ export default async function SearchPage({
 
       <main className="mx-auto max-w-7xl p-8">
         {/* Search Section */}
-        <div className="mb-8 flex items-center gap-4">
+        <form
+          action="/search"
+          method="get"
+          className="mb-8 flex items-center gap-4"
+        >
           <div className="relative flex-1">
             <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
               <Search className="size-5 text-slate-500" />
             </div>
             <input
               type="text"
+              name="q"
               defaultValue={q}
               placeholder="Search"
               className="w-full rounded-xl bg-slate-200 py-4 pl-12 pr-4 text-lg focus:outline-none focus:ring-2 focus:ring-slate-300"
             />
           </div>
-          <Button variant="ghost" size="icon" className="size-12">
+          {amenity ? (
+            <input type="hidden" name="amenity" value={amenity} />
+          ) : null}
+          {lat ? <input type="hidden" name="lat" value={lat} /> : null}
+          {lon ? <input type="hidden" name="lon" value={lon} /> : null}
+          <Button
+            type="submit"
+            variant="ghost"
+            size="icon"
+            className="size-12"
+            aria-label="Search"
+          >
             <SlidersHorizontal className="size-6" />
           </Button>
-        </div>
+        </form>
 
         {/* Results Header */}
         <h2 className="mb-6 text-2xl font-bold">
-          {data.length} {data.length === 1 ? "Result" : "Results"} for "{q || amenity}"
+          {data.length} {data.length === 1 ? "Result" : "Results"} for &quot;
+          {q || amenity}&quot;
         </h2>
 
         {errorMessage && <div className="text-destructive">{errorMessage}</div>}

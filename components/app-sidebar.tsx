@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, User } from "lucide-react";
+import { DoorOpen, MapPin, User } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { VenueCard, type Venue } from "@/components/venue-card";
 import { Button } from "@/components/ui/button";
@@ -31,15 +31,10 @@ export function AppSidebar({
       {/* Header */}
       <header className="flex items-center justify-between px-5 pt-5 pb-4">
         <div className="flex items-center gap-2.5">
-          <div
-            className="flex size-9 items-center justify-center rounded-md bg-primary"
-            aria-hidden="true"
-          >
-            <MapPin className="size-5 text-primary-foreground" />
+          <div className="flex items-center gap-2">
+            <DoorOpen className="size-8 text-slate-700" />
+            <span className="text-2xl font-semibold tracking-tight">WayIn</span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-foreground">
-            WayIn
-          </span>
         </div>
         <Button
           variant="ghost"

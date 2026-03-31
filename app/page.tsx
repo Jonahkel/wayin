@@ -36,7 +36,7 @@ const VenueMap = dynamic(
 );
 
 export default function HomePage() {
-  const { recentVenues } = useVenues(); 
+  const { recentVenues } = useVenues();
   const [lat, setLat] = useState<number | null>(null);
   const [lon, setLon] = useState<number | null>(null);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
@@ -60,7 +60,7 @@ export default function HomePage() {
       },
       (error) => {
         console.log("Location error:", error);
-      }
+      },
     );
   };
 
@@ -73,7 +73,10 @@ export default function HomePage() {
     setMobileMenuOpen(false);
   }, []);
 
-  const handleSearchSubmit = (options?: { queryOverride?: string; amenity?: string }) => {
+  const handleSearchSubmit = (options?: {
+    queryOverride?: string;
+    amenity?: string;
+  }) => {
     const query = options?.queryOverride ?? searchInput;
     const amenity = options?.amenity;
     const params = new URLSearchParams();
@@ -99,7 +102,6 @@ export default function HomePage() {
   return (
     // overflow-hidden prevents the whole page from scrolling if the content inside grows
     <div className="flex h-dvh w-full flex-col overflow-hidden lg:flex-row">
-      
       {/* Desktop sidebar - Added h-full and overflow-y-auto */}
       <div className="hidden h-full w-80 shrink-0 overflow-y-auto border-r border-border lg:flex xl:w-96">
         <AppSidebar
@@ -160,11 +162,11 @@ export default function HomePage() {
 
         {/* Map - size-full ensures it fills the flex-1 area */}
         <div className="size-full">
-            <VenueMap
+          <VenueMap
             venues={recentVenues}
             selectedVenue={selectedVenue}
             onSelectVenue={handleSelectVenue}
-            />
+          />
         </div>
       </main>
     </div>
