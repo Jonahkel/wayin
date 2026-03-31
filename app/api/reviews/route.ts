@@ -8,7 +8,23 @@ type CreateReviewRequestBody = {
   comment?: unknown;
   userId?: unknown;
   locationId?: unknown;
+  tagRatings?: unknown;
 };
+
+type ParsedTagRatingInput = {
+  tagId: number;
+  rating: number;
+};
+
+const reviewInclude = {
+  user: true,
+  location: true,
+  tagRatings: {
+    include: {
+      tag: true,
+    },
+  },
+} as const;
 
 function normalizeOptionalString(value: unknown) {
   if (typeof value !== "string") {
@@ -53,6 +69,58 @@ function parseRating(value: unknown) {
   return Number.NaN;
 }
 
+function parseTagRatings(value: unknown) {
+  if (value === undefined) {
+    return { tagRatings: undefined as ParsedTagRatingInput[] | undefined };
+  }
+
+  if (!Array.isArray(value)) {
+    return {
+      error:
+        "tagRatings must be an array of objects with tagId and rating fields",
+    };
+  }
+
+  const parsedTagRatings: ParsedTagRatingInput[] = [];
+  const tagIds = new Set<number>();
+
+  for (const item of value) {
+    if (typeof item !== "object" || item === null) {
+      return {
+        error:
+          "tagRatings must be an array of objects with tagId and rating fields",
+      };
+    }
+
+    const tagId = parsePositiveInteger(
+      (item as { tagId?: unknown }).tagId
+    );
+    const tagRating = parseRating((item as { rating?: unknown }).rating);
+
+    if (tagId === undefined) {
+      return { error: "Each tag rating must include a positive integer tagId" };
+    }
+
+    if (
+      tagRating === undefined ||
+      !Number.isInteger(tagRating) ||
+      tagRating < 1 ||
+      tagRating > 3
+    ) {
+      return { error: "Each tag rating must be an integer between 1 and 3" };
+    }
+
+    if (tagIds.has(tagId)) {
+      return { error: "tagRatings cannot contain duplicate tagId values" };
+    }
+
+    tagIds.add(tagId);
+    parsedTagRatings.push({ tagId, rating: tagRating });
+  }
+
+  return { tagRatings: parsedTagRatings };
+}
+
 export async function POST(request: Request) {
   let body: CreateReviewRequestBody;
 
@@ -67,6 +135,16 @@ export async function POST(request: Request) {
   const rating = parseRating(body.rating);
   const userId = parsePositiveInteger(body.userId);
   const locationId = parsePositiveInteger(body.locationId);
+  const parsedTagRatingsResult = parseTagRatings(body.tagRatings);
+
+  if ("error" in parsedTagRatingsResult) {
+    return NextResponse.json(
+      { error: parsedTagRatingsResult.error },
+      { status: 400 }
+    );
+  }
+
+  const tagRatings = parsedTagRatingsResult.tagRatings;
 
   if (userId === undefined) {
     return NextResponse.json(
@@ -111,6 +189,20 @@ export async function POST(request: Request) {
         throw new Error("LOCATION_NOT_FOUND");
       }
 
+      if (tagRatings !== undefined && tagRatings.length > 0) {
+        const existingTags = await tx.tag.findMany({
+          where: {
+            id: { in: tagRatings.map((tagRating) => tagRating.tagId) },
+            isActive: true,
+          },
+          select: { id: true },
+        });
+
+        if (existingTags.length !== tagRatings.length) {
+          throw new Error("INVALID_TAGS");
+        }
+      }
+
       const createdReview = await tx.review.create({
         data: {
           title,
@@ -118,11 +210,18 @@ export async function POST(request: Request) {
           comment,
           userId,
           locationId,
+          ...(tagRatings !== undefined
+            ? {
+                tagRatings: {
+                  create: tagRatings.map((tagRating) => ({
+                    tagId: tagRating.tagId,
+                    rating: tagRating.rating,
+                  })),
+                },
+              }
+            : {}),
         },
-        include: {
-          user: true,
-          location: true,
-        },
+        include: reviewInclude,
       });
 
       await tx.location.update({
@@ -145,6 +244,13 @@ export async function POST(request: Request) {
 
     if (error instanceof Error && error.message === "LOCATION_NOT_FOUND") {
       return NextResponse.json({ error: "Location not found" }, { status: 404 });
+    }
+
+    if (error instanceof Error && error.message === "INVALID_TAGS") {
+      return NextResponse.json(
+        { error: "One or more tagIds are invalid or inactive" },
+        { status: 400 }
+      );
     }
 
     console.error("Failed to create review", error);
@@ -173,10 +279,7 @@ export async function GET(request: Request) {
 
       const review = await prisma.review.findUnique({
         where: { id: parsedReviewId },
-        include: {
-          user: true,
-          location: true,
-        },
+        include: reviewInclude,
       });
 
       if (!review) {
@@ -197,10 +300,7 @@ export async function GET(request: Request) {
 
       const reviews = await prisma.review.findMany({
         where: { locationId: parsedLocationId },
-        include: {
-          user: true,
-          location: true,
-        },
+        include: reviewInclude,
       });
 
       return NextResponse.json(reviews);
@@ -217,20 +317,14 @@ export async function GET(request: Request) {
 
       const reviews = await prisma.review.findMany({
         where: { userId: parsedUserId },
-        include: {
-          user: true,
-          location: true,
-        },
+        include: reviewInclude,
       });
 
       return NextResponse.json(reviews);
     }
 
     const allReviews = await prisma.review.findMany({
-      include: {
-        user: true,
-        location: true,
-      },
+      include: reviewInclude,
     });
 
     return NextResponse.json(allReviews);
@@ -248,6 +342,7 @@ type UpdateReviewRequestBody = {
   title?: unknown;
   rating?: unknown;
   comment?: unknown;
+  tagRatings?: unknown;
 };
 
 export async function PUT(request: Request) {
@@ -270,6 +365,16 @@ export async function PUT(request: Request) {
   const title = normalizeOptionalString(body.title);
   const comment = normalizeOptionalString(body.comment);
   const rating = parseRating(body.rating);
+  const parsedTagRatingsResult = parseTagRatings(body.tagRatings);
+
+  if ("error" in parsedTagRatingsResult) {
+    return NextResponse.json(
+      { error: parsedTagRatingsResult.error },
+      { status: 400 }
+    );
+  }
+
+  const tagRatings = parsedTagRatingsResult.tagRatings;
 
   if (
     rating !== undefined &&
@@ -295,24 +400,68 @@ export async function PUT(request: Request) {
     if (comment !== undefined) updateData.comment = comment;
     if (rating !== undefined) updateData.rating = rating;
 
-    if (Object.keys(updateData).length === 0) {
+    if (Object.keys(updateData).length === 0 && tagRatings === undefined) {
       return NextResponse.json(
         { error: "No fields to update" },
         { status: 400 }
       );
     }
 
-    const updatedReview = await prisma.review.update({
-      where: { id: reviewId },
-      data: updateData,
-      include: {
-        user: true,
-        location: true,
-      },
+    const updatedReview = await prisma.$transaction(async (tx) => {
+      if (tagRatings !== undefined && tagRatings.length > 0) {
+        const existingTags = await tx.tag.findMany({
+          where: {
+            id: { in: tagRatings.map((tagRating) => tagRating.tagId) },
+            isActive: true,
+          },
+          select: { id: true },
+        });
+
+        if (existingTags.length !== tagRatings.length) {
+          throw new Error("INVALID_TAGS");
+        }
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await tx.review.update({
+          where: { id: reviewId },
+          data: updateData,
+        });
+      }
+
+      if (tagRatings !== undefined) {
+        await tx.reviewTagRating.deleteMany({ where: { reviewId } });
+
+        if (tagRatings.length > 0) {
+          await tx.reviewTagRating.createMany({
+            data: tagRatings.map((tagRating) => ({
+              reviewId,
+              tagId: tagRating.tagId,
+              rating: tagRating.rating,
+            })),
+          });
+        }
+      }
+
+      return tx.review.findUnique({
+        where: { id: reviewId },
+        include: reviewInclude,
+      });
     });
+
+    if (!updatedReview) {
+      return NextResponse.json({ error: "Review not found" }, { status: 404 });
+    }
 
     return NextResponse.json(updatedReview);
   } catch (error) {
+    if (error instanceof Error && error.message === "INVALID_TAGS") {
+      return NextResponse.json(
+        { error: "One or more tagIds are invalid or inactive" },
+        { status: 400 }
+      );
+    }
+
     console.error("Failed to update review", error);
     return NextResponse.json(
       { error: "Failed to update review" },

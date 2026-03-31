@@ -3,7 +3,7 @@ import "dotenv/config";
 // This is an integration test: it creates real Prisma data, rewrites relative
 // fetch calls to the local Next dev server, and verifies the review was stored.
 
-import { PrismaClient, Review } from "../app/generated/prisma/client";
+import { PrismaClient } from "../app/generated/prisma/client";
 import {
   createReview,
   type CreateReviewInput,
@@ -38,6 +38,8 @@ async function runTests() {
   let userId: number | undefined;
   let locationId: number | undefined;
   let reviewId: number | undefined;
+  let tagIdOne: number | undefined;
+  let tagIdTwo: number | undefined;
 
   try {
     const user = await prisma.user.create({
@@ -63,12 +65,30 @@ async function runTests() {
     });
     locationId = location.id;
 
+    const createdTagOne = await prisma.tag.create({
+      data: {
+        name: `test_tag_one_${Date.now()}`,
+      },
+    });
+    tagIdOne = createdTagOne.id;
+
+    const createdTagTwo = await prisma.tag.create({
+      data: {
+        name: `test_tag_two_${Date.now()}`,
+      },
+    });
+    tagIdTwo = createdTagTwo.id;
+
     const input: CreateReviewInput = {
       title: "Great accessibility",
       rating: 5,
       comment: "Ramps and wide aisles.",
       userId,
       locationId,
+      tagRatings: [
+        { tagId: tagIdOne, rating: 3 },
+        { tagId: tagIdTwo, rating: 2 },
+      ],
     };
 
     let fetchUrl = "";
@@ -93,6 +113,11 @@ async function runTests() {
       include: {
         user: true,
         location: true,
+        tagRatings: {
+          include: {
+            tag: true,
+          },
+        },
       },
       orderBy: {
         id: "desc",
@@ -135,6 +160,16 @@ async function runTests() {
       updatedLocation?.reviewCount === 1,
       `received ${updatedLocation?.reviewCount}`
     );
+    check(
+      "Stores tag ratings in database",
+      (createdReview?.tagRatings.length ?? 0) === 2,
+      `received ${createdReview?.tagRatings.length ?? 0}`
+    );
+    check(
+      "Returns tag ratings from createReview",
+      Array.isArray(result.tagRatings) && result.tagRatings.length === 2,
+      `received ${Array.isArray(result.tagRatings) ? result.tagRatings.length : "N/A"}`
+    );
 
     // Test getReview
     console.log("\nTesting getReview helper...\n");
@@ -149,6 +184,11 @@ async function runTests() {
     check(
       "getReview returns correct title",
       fetchedReview?.title === input.title
+    );
+    check(
+      "getReview includes tag ratings",
+      Array.isArray(fetchedReview?.tagRatings) && fetchedReview.tagRatings.length === 2,
+      `received ${Array.isArray(fetchedReview?.tagRatings) ? fetchedReview.tagRatings.length : "N/A"}`
     );
 
     // Test getReviewsByLocationId
@@ -201,6 +241,7 @@ async function runTests() {
       title: "Updated title",
       rating: 4,
       comment: "Updated comment",
+      tagRatings: [{ tagId: tagIdTwo, rating: 1 }],
     };
     const updatedReview = await updateReview(updateInput);
     check(
@@ -215,13 +256,29 @@ async function runTests() {
       "updateReview updates comment",
       updatedReview?.comment === updateInput.comment
     );
+    check(
+      "updateReview replaces tag ratings",
+      Array.isArray(updatedReview?.tagRatings) &&
+        updatedReview.tagRatings.length === 1 &&
+        updatedReview.tagRatings[0]?.tagId === tagIdTwo &&
+        updatedReview.tagRatings[0]?.rating === 1
+    );
 
     const dbUpdatedReview = await prisma.review.findUnique({
       where: { id: reviewId },
+      include: {
+        tagRatings: true,
+      },
     });
     check(
       "updateReview persists to database",
       dbUpdatedReview?.title === updateInput.title
+    );
+    check(
+      "updateReview tag ratings persist to database",
+      (dbUpdatedReview?.tagRatings.length ?? 0) === 1 &&
+        dbUpdatedReview?.tagRatings[0]?.tagId === tagIdTwo &&
+        dbUpdatedReview?.tagRatings[0]?.rating === 1
     );
 
     // Test deleteReview
@@ -263,6 +320,14 @@ async function runTests() {
 
     if (locationId !== undefined) {
       await prisma.location.delete({ where: { id: locationId } });
+    }
+
+    if (tagIdTwo !== undefined) {
+      await prisma.tag.delete({ where: { id: tagIdTwo } });
+    }
+
+    if (tagIdOne !== undefined) {
+      await prisma.tag.delete({ where: { id: tagIdOne } });
     }
 
     if (userId !== undefined) {

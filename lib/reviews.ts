@@ -4,6 +4,11 @@ type ReviewWithRelations = Prisma.ReviewGetPayload<{
   include: {
     user: true;
     location: true;
+    tagRatings: {
+      include: {
+        tag: true;
+      };
+    };
   };
 }>;
 
@@ -17,6 +22,10 @@ export type CreateReviewInput = {
   comment?: string;
   userId: number;
   locationId: number;
+  tagRatings?: Array<{
+    tagId: number;
+    rating: number;
+  }>;
 };
 
 export async function createReview(input: CreateReviewInput) {
@@ -126,6 +135,10 @@ export type UpdateReviewInput = {
   title?: string;
   rating?: number;
   comment?: string;
+  tagRatings?: Array<{
+    tagId: number;
+    rating: number;
+  }>;
 };
 
 export async function updateReview(input: UpdateReviewInput) {
