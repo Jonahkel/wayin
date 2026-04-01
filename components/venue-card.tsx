@@ -32,11 +32,11 @@ export function VenueCard({ venue, isSelected, onSelect }: VenueCardProps) {
       aria-label={`${venue.name}, ${venue.address}, ${venue.city}, ${venue.state} ${venue.zip}. ${venue.reviewCount} reviews.`}
       aria-pressed={isSelected}
       className={cn(
-        "flex w-full items-start gap-4 rounded-lg border-2 bg-card p-4 text-card-foreground transition-colors",
-        "min-h-[4rem] cursor-pointer",
-        "hover:border-accent hover:bg-secondary/50",
-        "focus-visible:ring-ring/50 focus-visible:border-ring focus-visible:ring-[3px] outline-none",
-        isSelected ? "border-accent bg-secondary/30" : "border-border",
+        "flex w-full cursor-pointer items-start gap-4 overflow-hidden rounded-2xl bg-slate-100 p-4 transition-all",
+        "min-h-16",
+        "hover:ring-2 hover:ring-slate-300",
+        "focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none",
+        isSelected ? "ring-2 ring-slate-400" : "ring-1 ring-slate-200",
       )}
       onClick={() => onSelect?.(venue)}
       onKeyDown={(e) => {
@@ -47,20 +47,17 @@ export function VenueCard({ venue, isSelected, onSelect }: VenueCardProps) {
       }}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <h3 className="text-base font-bold leading-snug text-foreground">
+        <h3 className="text-2xl font-bold leading-snug text-slate-800">
           {venue.name}
         </h3>
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-1 text-sm leading-relaxed text-slate-500">
           {venue.address}
           <br />
           {venue.city}, {venue.state} {venue.zip}
         </p>
-        <div className="mt-1 flex items-center gap-1.5">
-          <PlusCircle
-            className="size-4 shrink-0 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <span className="text-sm font-medium text-muted-foreground">
+        <div className="mt-3 flex items-center gap-2 font-medium text-slate-700">
+          <PlusCircle className="size-5 shrink-0" aria-hidden="true" />
+          <span className="text-sm">
             {venue.reviewCount} {venue.reviewCount === 1 ? "Review" : "Reviews"}
           </span>
         </div>

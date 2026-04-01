@@ -13,20 +13,22 @@ export default function AddReviewPage() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
 
-  const [tags, setTags] = useState<Record<string, "happy" | "neutral" | "sad" | null>>({
+  const [tags, setTags] = useState<
+    Record<string, "happy" | "neutral" | "sad" | null>
+  >({
     "Wheelchair Access": null,
     "Menu Readability": null,
     "Service Animal Access": null,
     "Noise Levels": null,
     "Charging Ports": null,
     "Seating Availability": null,
-    "Parking": null,
-    "Lighting": null,
+    Parking: null,
+    Lighting: null,
     "Private Spaces": null,
     "Fragrances/Scents": null,
-    "Restroom": null,
+    Restroom: null,
     "Reading Necessary": null,
-    "Terrain/Flooring": null
+    "Terrain/Flooring": null,
   });
 
   const handleTagChange = (tag: string, value: "happy" | "neutral" | "sad") => {
@@ -37,8 +39,14 @@ export default function AddReviewPage() {
   };
 
   const handleSubmit = () => {
-    if (!rating && !text.trim()) {
-      alert("Please provide at least a rating or review text.");
+    const hasAtLeastOneField =
+      rating !== null ||
+      title.trim().length > 0 ||
+      text.trim().length > 0 ||
+      Object.values(tags).some((value) => value !== null);
+
+    if (!hasAtLeastOneField) {
+      alert("Please fill at least one field before submitting your review.");
       return;
     }
 
@@ -62,9 +70,9 @@ export default function AddReviewPage() {
 
       {/* ⭐ Rating */}
       <div>
-        <p className="font-semibold mb-2">Rating</p>
+        <p className="text-lg font-semibold mb-4">Rating</p>
         <div className="flex gap-2">
-          {[1,2,3,4,5].map((num) => (
+          {[1, 2, 3, 4, 5].map((num) => (
             <button
               key={num}
               onClick={() => setRating(num)}
@@ -76,9 +84,29 @@ export default function AddReviewPage() {
         </div>
       </div>
 
+      {/* <div className="flex gap-2 text-lg" aria-label="Review rating">
+        {[1, 2, 3, 4, 5].map((num) => {
+          const isFilled = num <= (rating ?? 0);
+
+          return (
+            <button
+              key={num}
+              type="button"
+              onClick={() => setRating(num)}
+              className={`text-2xl leading-none transition-colors ${
+                isFilled ? "text-slate-800" : "text-slate-400"
+              }`}
+              aria-label={`${num} star${num === 1 ? "" : "s"}`}
+            >
+              {isFilled ? "★" : "☆"}
+            </button>
+          );
+        })}
+      </div> */}
+
       {/* 🏷️ Tags */}
       <div>
-        <p className="font-semibold mb-2">Tags</p>
+        <p className="text-lg font-semibold mb-4">Tags</p>
 
         {Object.keys(tags).map((tag) => {
           const value = tags[tag];
@@ -87,18 +115,25 @@ export default function AddReviewPage() {
             value === "happy"
               ? "bg-blue-200"
               : value === "neutral"
-              ? "bg-yellow-200"
-              : value === "sad"
-              ? "bg-red-200"
-              : "bg-gray-100";
+                ? "bg-yellow-200"
+                : value === "sad"
+                  ? "bg-red-200"
+                  : "bg-gray-100";
 
           return (
-            <div key={tag} className={`flex items-center justify-between p-2 rounded mb-2 ${color}`}>
+            <div
+              key={tag}
+              className={`flex items-center justify-between p-3 rounded mb-2 ${color}`}
+            >
               <span>{tag}</span>
 
-              <div className="flex gap-2">
-                <button onClick={() => handleTagChange(tag, "happy")}>😊</button>
-                <button onClick={() => handleTagChange(tag, "neutral")}>😐</button>
+              <div className="flex gap-4 text-2xl">
+                <button onClick={() => handleTagChange(tag, "happy")}>
+                  😊
+                </button>
+                <button onClick={() => handleTagChange(tag, "neutral")}>
+                  😐
+                </button>
                 <button onClick={() => handleTagChange(tag, "sad")}>😞</button>
               </div>
             </div>
@@ -108,7 +143,7 @@ export default function AddReviewPage() {
 
       {/* 📝 Title */}
       <div>
-        <label className="block font-semibold mb-1">Title</label>
+        <label className="block font-semibold text-lg mb-2">Title</label>
         <input
           type="text"
           value={title}
@@ -120,7 +155,7 @@ export default function AddReviewPage() {
 
       {/* 💬 Review Text */}
       <div>
-        <label className="block font-semibold mb-1">Review</label>
+        <label className="block font-semibold text-lg mb-2">Review</label>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}

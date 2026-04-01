@@ -1,6 +1,7 @@
 export type Review = {
   id: number;
   locationId: string;
+  createdAt?: string;
   title?: string;
   rating?: number | null;
   comment?: string;

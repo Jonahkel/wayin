@@ -1,6 +1,6 @@
 "use client";
 
-import { DoorOpen, MapPin, User } from "lucide-react";
+import { DoorOpen, User, UserCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { VenueCard, type Venue } from "@/components/venue-card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ export function AppSidebar({
       className="flex h-full w-full flex-col bg-card"
     >
       {/* Header */}
-      <header className="flex items-center justify-between px-5 pt-5 pb-4">
+      <header className="flex items-center justify-between px-5 pt-5 pb-4 shadow-sm">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2">
             <DoorOpen className="size-8 text-slate-700" />
@@ -42,13 +42,13 @@ export function AppSidebar({
           aria-label="Open user profile"
           className="rounded-full"
         >
-          <User className="size-6 text-muted-foreground" />
+          <UserCircle className="size-9 text-slate-700" />
         </Button>
       </header>
 
       {/* Recent Searches heading */}
-      <div className="px-5 pb-3">
-        <h2 className="text-lg font-semibold italic text-foreground">
+      <div className="py-5 px-5">
+        <h2 className="text-xl font-semibold text-foreground">
           Recent Searches
         </h2>
       </div>
@@ -56,7 +56,7 @@ export function AppSidebar({
       {/* Venue list */}
       <ScrollArea className="flex-1">
         <nav aria-label="Recent search results" className="px-5">
-          <ul className="flex flex-col gap-3 pb-4" role="list">
+          <ul className="flex flex-col gap-3 pt-1 pb-4" role="list">
             {venues.map((venue) => (
               <li key={venue.id} className="w-full">
                 <VenueCard
