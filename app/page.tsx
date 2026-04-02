@@ -1,24 +1,25 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Menu } from "lucide-react";
+import { Menu, User } from "lucide-react"; 
+import { useRouter } from "next/navigation";
+
+// Internal Components
 import { AppSidebar } from "@/components/app-sidebar";
 import { MapSearchBar } from "@/components/map-search-bar";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useRouter } from "next/navigation";
-import { useVenues } from "@/context/VenueContext";
-import { useEffect } from "react";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+// Hooks & Context
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useVenues } from "@/context/VenueContext";
+import { useAuth } from "@/hooks/use-auth"; // <--- Our new hook
+
+// Types
 import type { Venue } from "@/components/venue-card";
 
+// Dynamic Import for Map (Client-side only)
 const VenueMap = dynamic(
   () => import("@/components/venue-map").then((mod) => mod.VenueMap),
   {
@@ -36,31 +37,58 @@ const VenueMap = dynamic(
 );
 
 export default function HomePage() {
-  const { recentVenues } = useVenues(); 
+  // 1. Hook Initializations
+  const { recentVenues } = useVenues();
+  const { user, isLoading } = useAuth(); 
+  const router = useRouter();
+  const isMobile = useIsMobile();
+
+  // 2. Local State
   const [lat, setLat] = useState<number | null>(null);
   const [lon, setLon] = useState<number | null>(null);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   const currentPage = 0;
-  const isMobile = useIsMobile();
-  const router = useRouter();
 
-  const getUserLocation = () => {
-    if (!navigator.geolocation) {
-      console.log("Geolocation not supported");
-      return;
+  // 3. Navigation Handlers
+  const handleProfileClick = () => {
+    // If the hook is still checking localStorage, do nothing
+    if (isLoading) return;
+
+    if (user) {
+      router.push("/profile");
+    } else {
+      router.push("/login");
+    }
+  };
+
+  const handleSearchSubmit = (options?: { queryOverride?: string; amenity?: string }) => {
+    const query = options?.queryOverride ?? searchInput;
+    const amenity = options?.amenity;
+    const params = new URLSearchParams();
+
+    if (query.trim()) params.append("q", query);
+    if (amenity) params.append("amenity", amenity);
+    if (lat && lon) {
+      params.append("lat", lat.toString());
+      params.append("lon", lon.toString());
     }
 
+    if (!query.trim() && !amenity) return;
+    router.push(`/search?${params.toString()}`);
+  };
+
+  // 4. Effects & Callbacks
+  const getUserLocation = () => {
+    if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log("Location:", position.coords);
         setLat(position.coords.latitude);
         setLon(position.coords.longitude);
       },
-      (error) => {
-        console.log("Location error:", error);
-      }
+      (error) => console.error("Location error:", error)
     );
   };
 
@@ -73,34 +101,10 @@ export default function HomePage() {
     setMobileMenuOpen(false);
   }, []);
 
-  const handleSearchSubmit = (options?: { queryOverride?: string; amenity?: string }) => {
-    const query = options?.queryOverride ?? searchInput;
-    const amenity = options?.amenity;
-    const params = new URLSearchParams();
-
-    if (query.trim()) {
-      params.append("q", query);
-    }
-
-    if (amenity) {
-      params.append("amenity", amenity);
-    }
-
-    if (lat && lon) {
-      params.append("lat", lat.toString());
-      params.append("lon", lon.toString());
-    }
-
-    if (!query.trim() && !amenity) return;
-
-    router.push(`/search?${params.toString()}`);
-  };
-
   return (
-    // overflow-hidden prevents the whole page from scrolling if the content inside grows
     <div className="flex h-dvh w-full flex-col overflow-hidden lg:flex-row">
       
-      {/* Desktop sidebar - Added h-full and overflow-y-auto */}
+      {/* Sidebar: Desktop */}
       <div className="hidden h-full w-80 shrink-0 overflow-y-auto border-r border-border lg:flex xl:w-96">
         <AppSidebar
           venues={recentVenues}
@@ -113,14 +117,13 @@ export default function HomePage() {
         />
       </div>
 
-      {/* Mobile sheet */}
+      {/* Sidebar: Mobile (Sheet) */}
       <Sheet open={isMobile && mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent side="left" className="z-1200 w-80 p-0 sm:max-w-80">
           <SheetTitle className="sr-only">Recent Searches</SheetTitle>
           <SheetDescription className="sr-only">
             Browse your recent venue searches.
           </SheetDescription>
-          {/* Ensure the sidebar inside the sheet is also scrollable if it's long */}
           <div className="h-full overflow-y-auto">
             <AppSidebar
               venues={recentVenues}
@@ -135,20 +138,24 @@ export default function HomePage() {
         </SheetContent>
       </Sheet>
 
-      {/* Map area */}
+      {/* Main Content (Map & Floating UI) */}
       <main id="main-content" className="relative flex-1">
-        {/* Search bar overlay */}
+        
+        {/* Top UI Overlay */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-1100 flex items-start justify-between gap-3 p-4">
+          
+          {/* Mobile Menu Trigger */}
           <Button
             variant="outline"
             size="icon-lg"
-            aria-label="Open venue list"
+            aria-label="Open menu"
             className="pointer-events-auto size-12 shrink-0 rounded-lg bg-card shadow-md lg:hidden"
             onClick={() => setMobileMenuOpen(true)}
           >
             <Menu className="size-5 text-foreground" />
           </Button>
 
+          {/* Search Bar */}
           <div className="pointer-events-auto flex-1">
             <MapSearchBar
               searchQuery={searchInput}
@@ -156,14 +163,26 @@ export default function HomePage() {
               onSearchSubmit={handleSearchSubmit}
             />
           </div>
+
+          {/* Profile Action Button */}
+          <Button
+            variant="outline"
+            size="icon-lg"
+            aria-label={user ? "View Profile" : "Log In"}
+            className="pointer-events-auto !pointer-events-auto relative z-[100000] size-12 shrink-0 rounded-lg bg-card shadow-md"
+            onClick={handleProfileClick}
+            // disabled={isLoading} // Disable interaction while auth is loading
+          >
+            <User className={`size-5 ${user ? "text-primary" : "text-foreground"}`} />
+          </Button>
         </div>
 
-        {/* Map - size-full ensures it fills the flex-1 area */}
+        {/* Fullscreen Map */}
         <div className="size-full">
             <VenueMap
-            venues={recentVenues}
-            selectedVenue={selectedVenue}
-            onSelectVenue={handleSelectVenue}
+              venues={recentVenues}
+              selectedVenue={selectedVenue}
+              onSelectVenue={handleSelectVenue}
             />
         </div>
       </main>

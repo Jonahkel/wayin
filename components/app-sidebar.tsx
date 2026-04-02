@@ -41,14 +41,14 @@ export function AppSidebar({
             WayIn
           </span>
         </div>
-        <Button
+        {/* <Button
           variant="ghost"
           size="icon-lg"
           aria-label="Open user profile"
           className="rounded-full"
         >
           <User className="size-6 text-muted-foreground" />
-        </Button>
+        </Button> */}
       </header>
 
       {/* Recent Searches heading */}
