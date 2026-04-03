@@ -36,14 +36,14 @@ export function AppSidebar({
             <span className="text-2xl font-semibold tracking-tight">WayIn</span>
           </div>
         </div>
-        <Button
+        {/* <Button
           variant="ghost"
           size="icon-lg"
           aria-label="Open user profile"
           className="rounded-full"
         >
           <UserCircle className="size-9 text-slate-700" />
-        </Button>
+        </Button> */}
       </header>
 
       {/* Recent Searches heading */}

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { ENABLE_WAYIN_THEME } from "@/lib/theme-config";
 import { VenueProvider } from "@/context/VenueContext";
 // import { Analytics } from '@vercel/analytics/next'
+import { AuthProvider } from "@/hooks/use-auth";
 import "./globals.css";
 
 const _inter = Inter({
@@ -56,9 +57,11 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <VenueProvider>
-          {children}
-        </VenueProvider>
+         <AuthProvider>
+          <VenueProvider>
+            {children}
+          </VenueProvider>
+        </AuthProvider>
         {/* <Analytics /> */}
       </body>
     </html>

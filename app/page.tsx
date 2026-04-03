@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Menu } from "lucide-react";
+import { Menu, UserCircle } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { MapSearchBar } from "@/components/map-search-bar";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useVenues } from "@/context/VenueContext";
 import { useEffect } from "react";
 
+
 import {
   Sheet,
   SheetContent,
@@ -18,6 +19,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import type { Venue } from "@/components/venue-card";
+import { useAuth } from "@/hooks/use-auth";
 
 const VenueMap = dynamic(
   () => import("@/components/venue-map").then((mod) => mod.VenueMap),
@@ -37,16 +39,47 @@ const VenueMap = dynamic(
 
 export default function HomePage() {
   const { recentVenues } = useVenues();
+  const { user, isLoading } = useAuth(); 
+  const router = useRouter();
+  const isMobile = useIsMobile();
+
   const [lat, setLat] = useState<number | null>(null);
   const [lon, setLon] = useState<number | null>(null);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const currentPage = 0;
-  const isMobile = useIsMobile();
-  const router = useRouter();
+  // 3. Navigation Handlers
+  const handleProfileClick = () => {
+    // If the hook is still checking localStorage, do nothing
+    if (isLoading) return;
 
+    if (user) {
+      router.push("/profile");
+    } else {
+      router.push("/login");
+    }
+  };
+
+  const handleSearchSubmit = (options?: { queryOverride?: string; amenity?: string }) => {
+    const query = options?.queryOverride ?? searchInput;
+    const amenity = options?.amenity;
+    const params = new URLSearchParams();
+
+    if (query.trim()) params.append("q", query);
+    if (amenity) params.append("amenity", amenity);
+    if (lat && lon) {
+      params.append("lat", lat.toString());
+      params.append("lon", lon.toString());
+    }
+
+    if (!query.trim() && !amenity) return;
+    router.push(`/search?${params.toString()}`);
+  };
+
+  // 4. Effects & Callbacks
   const getUserLocation = () => {
+    if (!navigator.geolocation) return;
     if (!navigator.geolocation) {
       console.log("Geolocation not supported");
       return;
@@ -72,32 +105,6 @@ export default function HomePage() {
     setSelectedVenue((prev) => (prev?.id === venue.id ? null : venue));
     setMobileMenuOpen(false);
   }, []);
-
-  const handleSearchSubmit = (options?: {
-    queryOverride?: string;
-    amenity?: string;
-  }) => {
-    const query = options?.queryOverride ?? searchInput;
-    const amenity = options?.amenity;
-    const params = new URLSearchParams();
-
-    if (query.trim()) {
-      params.append("q", query);
-    }
-
-    if (amenity) {
-      params.append("amenity", amenity);
-    }
-
-    if (lat && lon) {
-      params.append("lat", lat.toString());
-      params.append("lon", lon.toString());
-    }
-
-    if (!query.trim() && !amenity) return;
-
-    router.push(`/search?${params.toString()}`);
-  };
 
   return (
     // overflow-hidden prevents the whole page from scrolling if the content inside grows
@@ -158,6 +165,17 @@ export default function HomePage() {
               onSearchSubmit={handleSearchSubmit}
             />
           </div>
+          {/* Profile Action Button */}
+          <Button
+            variant="outline"
+            size="icon-lg"
+            aria-label={user ? "View Profile" : "Log In"}
+            className="pointer-events-auto !pointer-events-auto relative z-[100000] size-12 shrink-0 rounded-lg bg-card shadow-md"
+            onClick={handleProfileClick}
+            // disabled={isLoading} // Disable interaction while auth is loading
+          >
+            <UserCircle className={`size-5 ${user ? "text-primary" : "text-foreground"}`} />
+          </Button>
         </div>
 
         {/* Map - size-full ensures it fills the flex-1 area */}
