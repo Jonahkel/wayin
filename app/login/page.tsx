@@ -1,42 +1,128 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { DoorOpen } from "lucide-react";
 
-export default function LoginPage() {
-  const [userNameInput, setUserNameInput] = useState("");
-  const { login } = useAuth();
+export default function AuthPage() {
+  const [isLogin, setIsLogin] = useState(true);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const { login, user, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.push(redirect || "/");
+    }
+  }, [user, isLoading, router, redirect]);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // In a real app, you'd verify credentials with a database here
+    // still mock for now
     const mockUser = {
       id: "123",
       email: "user@example.com",
-      name: userNameInput,
+      name: username,
     };
 
-    login(mockUser); // This "saves" the user to localStorage
-    router.push("/"); // Send them back to the map
+    login(mockUser);
+    router.push(redirect || "/");
   };
 
+  if (isLoading) return null;
+
   return (
-    <div className="flex h-screen items-center justify-center">
-      <form onSubmit={handleLogin} className="w-80 space-y-4 p-6 border rounded-lg shadow-sm">
-        <h1 className="text-xl font-bold text-center">Login</h1>
-        <Input
-          placeholder="Enter username"
-          value={userNameInput}
-          onChange={(e) => setUserNameInput(e.target.value)}
-          required
-        />
-        <Button type="submit" className="w-full">Sign In</Button>
-      </form>
+    <div className="min-h-screen bg-white font-sans text-slate-900">
+      
+      {/* Navbar */}
+      <header className="flex items-center justify-between border-b px-6 py-3 shadow-sm">
+        <div className="flex items-center gap-2">
+          <DoorOpen className="size-8 text-slate-700" />
+          <span className="text-2xl font-semibold tracking-tight">
+            WayIn
+          </span>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <Link href="/">
+            <button className="text-lg font-medium hover:underline">
+              Home
+            </button>
+          </Link>
+        </div>
+      </header>
+
+      {/* Auth Card */}
+      <main className="flex items-center justify-center px-4 py-16">
+        <div className="w-full max-w-md rounded-2xl border bg-white p-8 shadow-md">
+          
+          {/* Toggle */}
+          <div className="mb-6 flex rounded-lg bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => setIsLogin(true)}
+              className={`w-1/2 rounded-md py-2 text-sm font-medium ${
+                isLogin ? "bg-white shadow" : "text-slate-500"
+              }`}
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsLogin(false)}
+              className={`w-1/2 rounded-md py-2 text-sm font-medium ${
+                !isLogin ? "bg-white shadow" : "text-slate-500"
+              }`}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          <h1 className="mb-6 text-center text-2xl font-bold">
+            {isLogin ? "Welcome Back" : "Create an Account"}
+          </h1>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Username
+              </label>
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter username"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Password
+              </label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                required
+              />
+            </div>
+
+            <Button type="submit" className="w-full text-lg py-5">
+              {isLogin ? "Sign In" : "Create Account"}
+            </Button>
+          </form>
+        </div>
+      </main>
     </div>
   );
 }
