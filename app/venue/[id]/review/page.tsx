@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { addReview } from "@/lib/temp-review-store"; // temp for peer review
+import Navbar from "@/components/Navbar";
 
 export default function AddReviewPage() {
   const router = useRouter();
@@ -65,112 +66,122 @@ export default function AddReviewPage() {
   };
 
   return (
-    <main className="mx-auto max-w-2xl p-8 space-y-6">
-      <h1 className="text-3xl font-bold">Add Review</h1>
+    <div className="min-h-screen bg-white">
+      <Navbar />
+      <main className="mx-auto max-w-2xl p-8 space-y-6">
+        <h1 className="text-3xl font-bold">Add Review</h1>
 
-      {/* ⭐ Rating */}
-      <div>
-        <p className="text-lg font-semibold mb-4">Rating</p>
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map((num) => (
-            <button
-              key={num}
-              onClick={() => setRating(num)}
-              className="text-2xl"
-            >
-              {rating && num <= rating ? "⭐" : "☆"}
-            </button>
-          ))}
+        {/* ⭐ Rating */}
+        <div>
+          <p className="text-lg font-semibold mb-4">Rating</p>
+          <div className="flex gap-2">
+            {[1, 2, 3, 4, 5].map((num) => (
+              <button
+                key={num}
+                onClick={() => setRating(num)}
+                className="text-2xl"
+              >
+                {rating && num <= rating ? "⭐" : "☆"}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* <div className="flex gap-2 text-lg" aria-label="Review rating">
-        {[1, 2, 3, 4, 5].map((num) => {
-          const isFilled = num <= (rating ?? 0);
+        {/* <div className="flex gap-2 text-lg" aria-label="Review rating">
+          {[1, 2, 3, 4, 5].map((num) => {
+            const isFilled = num <= (rating ?? 0);
 
-          return (
-            <button
-              key={num}
-              type="button"
-              onClick={() => setRating(num)}
-              className={`text-2xl leading-none transition-colors ${
-                isFilled ? "text-slate-800" : "text-slate-400"
-              }`}
-              aria-label={`${num} star${num === 1 ? "" : "s"}`}
-            >
-              {isFilled ? "★" : "☆"}
-            </button>
-          );
-        })}
-      </div> */}
+            return (
+              <button
+                key={num}
+                type="button"
+                onClick={() => setRating(num)}
+                className={`text-2xl leading-none transition-colors ${
+                  isFilled ? "text-slate-800" : "text-slate-400"
+                }`}
+                aria-label={`${num} star${num === 1 ? "" : "s"}`}
+              >
+                {isFilled ? "★" : "☆"}
+              </button>
+            );
+          })}
+        </div> */}
 
-      {/* 🏷️ Tags */}
-      <div>
-        <p className="text-lg font-semibold mb-4">Tags</p>
+        {/* 🏷️ Tags */}
+        <div>
+          <p className="text-lg font-semibold mb-4">Tags</p>
 
-        {Object.keys(tags).map((tag) => {
-          const value = tags[tag];
+          {Object.keys(tags).map((tag) => {
+            const value = tags[tag];
 
-          const color =
-            value === "happy"
-              ? "bg-blue-200"
-              : value === "neutral"
-                ? "bg-yellow-200"
-                : value === "sad"
-                  ? "bg-red-200"
-                  : "bg-gray-100";
+            const color =
+              value === "happy"
+                ? "bg-blue-200"
+                : value === "neutral"
+                  ? "bg-yellow-200"
+                  : value === "sad"
+                    ? "bg-red-200"
+                    : "bg-gray-100";
 
-          return (
-            <div
-              key={tag}
-              className={`flex items-center justify-between p-3 rounded mb-2 ${color}`}
-            >
-              <span>{tag}</span>
+            return (
+              <div
+                key={tag}
+                className={`flex items-center justify-between p-3 rounded mb-2 ${color}`}
+              >
+                <span>{tag}</span>
 
-              <div className="flex gap-4 text-2xl">
-                <button onClick={() => handleTagChange(tag, "happy")}>
-                  😊
-                </button>
-                <button onClick={() => handleTagChange(tag, "neutral")}>
-                  😐
-                </button>
-                <button onClick={() => handleTagChange(tag, "sad")}>😞</button>
+                <div className="flex gap-4 text-2xl">
+                  <button onClick={() => handleTagChange(tag, "happy")}>
+                    😊
+                  </button>
+                  <button onClick={() => handleTagChange(tag, "neutral")}>
+                    😐
+                  </button>
+                  <button onClick={() => handleTagChange(tag, "sad")}>😞</button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      {/* 📝 Title */}
-      <div>
-        <label className="block font-semibold text-lg mb-2">Title</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded border p-2"
-          placeholder="Short summary..."
-        />
-      </div>
+        {/* 📝 Title */}
+        <div>
+          <label className="block font-semibold text-lg mb-2">Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full rounded border p-2"
+            placeholder="Short summary..."
+          />
+        </div>
 
-      {/* 💬 Review Text */}
-      <div>
-        <label className="block font-semibold text-lg mb-2">Review</label>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="w-full rounded border p-2 h-32"
-          placeholder="Write your experience..."
-        />
-      </div>
+        {/* 💬 Review Text */}
+        <div>
+          <label className="block font-semibold text-lg mb-2">Review</label>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="w-full rounded border p-2 h-32"
+            placeholder="Write your experience..."
+          />
+        </div>
 
-      {/* 🚀 Submit */}
-      <button
-        onClick={handleSubmit}
-        className="w-full rounded bg-slate-900 py-2 text-white hover:bg-slate-700"
-      >
-        Submit Review
-      </button>
-    </main>
+        <button
+          onClick={() => router.push(`/venue/${venueId}`)}
+          className="w-full rounded border py-2 text-slate-700 hover:bg-slate-100"
+        >
+          Cancel
+        </button>
+
+        {/* 🚀 Submit */}
+        <button
+          onClick={handleSubmit}
+          className="w-full rounded bg-slate-900 py-2 text-white hover:bg-slate-700"
+        >
+          Submit Review
+        </button>
+      </main>
+    </div>
   );
 }

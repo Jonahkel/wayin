@@ -3,6 +3,7 @@ import { DoorOpen, UserCircle, Search, SlidersHorizontal } from "lucide-react";
 import SearchResultItem from "@/components/SearchResultItem";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 
 export default async function SearchPage({
   searchParams,
@@ -41,21 +42,7 @@ export default async function SearchPage({
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900">
-      {/* Navbar */}
-      <header className="flex items-center justify-between border-b px-6 py-3 shadow-sm">
-        <div className="flex items-center gap-2">
-          <DoorOpen className="size-8 text-slate-700" />
-          <span className="text-2xl font-semibold tracking-tight">WayIn</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <Link href="/">
-            <button className="text-lg font-medium hover:underline">
-              Home
-            </button>
-          </Link>
-          <UserCircle className="size-9 text-slate-700" />
-        </div>
-      </header>
+      <Navbar />
 
       <main className="mx-auto max-w-7xl p-8">
         {/* Search Section */}
