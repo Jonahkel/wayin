@@ -8,10 +8,16 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { DoorOpen } from "lucide-react";
 
+type AuthUser = {
+  id: string;
+  name: string;
+};
+
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const { login, user, isLoading } = useAuth();
   const router = useRouter();
@@ -24,18 +30,48 @@ export default function AuthPage() {
     }
   }, [user, isLoading, router, redirect]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
-    // still mock for now
-    const mockUser = {
-      id: "123",
-      email: "user@example.com",
-      name: username,
-    };
+    const trimmedUsername = username.trim();
 
-    login(mockUser);
-    router.push(redirect || "/");
+    if (!trimmedUsername) {
+      setError("Enter a username to continue.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: trimmedUsername,
+          password,
+          mode: isLogin ? "login" : "signup",
+        }),
+      });
+
+      const result = (await response.json()) as
+        | AuthUser
+        | { error: string };
+
+      if (!response.ok) {
+        setError(
+          "error" in result && typeof result.error === "string"
+            ? result.error
+            : "Unable to authenticate."
+        );
+        return;
+      }
+
+      login(result as AuthUser);
+      router.push(redirect || "/");
+    } catch {
+      setError("Unable to reach the authentication service.");
+    }
   };
 
   if (isLoading) return null;
@@ -90,6 +126,12 @@ export default function AuthPage() {
           <h1 className="mb-6 text-center text-2xl font-bold">
             {isLogin ? "Welcome Back" : "Create an Account"}
           </h1>
+
+          {error ? (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
