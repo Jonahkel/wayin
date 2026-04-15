@@ -174,7 +174,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-2xl mx-auto mb-6">
+      <main className="mx-auto max-w-5xl space-y-8">
         <Button
           variant="ghost"
           onClick={() => router.back()}
@@ -183,9 +183,6 @@ export default function ProfilePage() {
           <ArrowLeft className="size-4" />
           Back
         </Button>
-      </div>
-
-      <main className="mx-auto max-w-5xl space-y-8">
         <Card className="shadow-lg border-border">
           <CardHeader className="flex flex-row items-center gap-4 space-y-0">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
