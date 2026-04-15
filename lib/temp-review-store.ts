@@ -2,6 +2,8 @@ export type Review = {
   id: number;
   locationId: string;
   createdAt?: string;
+  userId?: string;
+  userName?: string;
   title?: string;
   rating?: number | null;
   comment?: string;
@@ -29,4 +31,23 @@ export function addReview(review: Review) {
 export function getReviewsByLocation(locationId: string) {
   const reviews = getAllReviews();
   return reviews.filter((r) => r.locationId === locationId);
+}
+
+export function getReviewsByUserId(userId: string) {
+  const reviews = getAllReviews();
+  return reviews.filter((r) => r.userId === userId);
+}
+
+export function deleteReviewByIdForUser(reviewId: number, userId: string) {
+  const reviews = getAllReviews();
+  const filteredReviews = reviews.filter(
+    (review) => !(review.id === reviewId && review.userId === userId),
+  );
+
+  if (filteredReviews.length === reviews.length) {
+    return false;
+  }
+
+  saveReviews(filteredReviews);
+  return true;
 }
