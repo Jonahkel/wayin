@@ -1,0 +1,54 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link "WayIn" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img [ref=e6]
+        - generic [ref=e9]: WayIn
+      - generic [ref=e10]:
+        - link "Home" [ref=e11] [cursor=pointer]:
+          - /url: /
+          - button "Home" [ref=e12]
+        - link "Login / Sign Up" [ref=e13] [cursor=pointer]:
+          - /url: /login
+          - button "Login / Sign Up" [ref=e14]
+    - main [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic:
+            - img
+          - textbox "Search" [ref=e18]: coffee
+        - button "Search" [ref=e19]:
+          - img
+      - heading "3 Results for \"coffee\"" [level=2] [ref=e20]
+      - generic [ref=e21]:
+        - generic [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]:
+            - heading "Coffee County" [level=3] [ref=e25]
+            - paragraph [ref=e26]: Georgia, United States
+          - generic [ref=e27]:
+            - img [ref=e28]
+            - generic [ref=e30]: "\"PLZ CONNECT TO DB TO GET NUMBER YALL\" Reviews"
+        - generic [ref=e33] [cursor=pointer]:
+          - generic [ref=e34]:
+            - heading "Coffee County" [level=3] [ref=e35]
+            - paragraph [ref=e36]: Alabama, United States
+          - generic [ref=e37]:
+            - img [ref=e38]
+            - generic [ref=e40]: "\"PLZ CONNECT TO DB TO GET NUMBER YALL\" Reviews"
+        - generic [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]:
+            - heading "Coffee County" [level=3] [ref=e45]
+            - paragraph [ref=e46]: Middle Tennessee, Tennessee, United States
+          - generic [ref=e47]:
+            - img [ref=e48]
+            - generic [ref=e50]: "\"PLZ CONNECT TO DB TO GET NUMBER YALL\" Reviews"
+  - button "Open Next.js Dev Tools" [ref=e57] [cursor=pointer]:
+    - img [ref=e58]
+  - alert [ref=e61]
+```
