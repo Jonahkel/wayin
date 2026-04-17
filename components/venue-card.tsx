@@ -29,11 +29,10 @@ export function VenueCard({ venue, isSelected, onSelect }: VenueCardProps) {
     <article
       role="button"
       tabIndex={0}
-      aria-label={`${venue.name}, ${venue.address}, ${venue.city}, ${venue.state} ${venue.zip}. ${venue.reviewCount} reviews.`}
+      aria-label={`${venue.name}, ${venue.address}, ${venue.city}. ${venue.reviewCount} reviews.`}
       aria-pressed={isSelected}
       className={cn(
-        "flex w-full cursor-pointer items-start gap-4 overflow-hidden rounded-2xl bg-slate-100 p-4 transition-all",
-        "min-h-16",
+        "w-full cursor-pointer rounded-2xl bg-slate-100 p-4 transition-all",
         "hover:ring-2 hover:ring-slate-300",
         "focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:outline-none",
         isSelected ? "ring-2 ring-slate-400" : "ring-1 ring-slate-200",
@@ -46,30 +45,21 @@ export function VenueCard({ venue, isSelected, onSelect }: VenueCardProps) {
         }
       }}
     >
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <h3 className="text-2xl font-bold leading-snug text-slate-800">
-          {venue.name}
-        </h3>
-        <p className="mt-1 text-sm leading-relaxed text-slate-500">
-          {venue.address}
-          <br />
-          {venue.city}, {venue.state} {venue.zip}
-        </p>
-        <div className="mt-3 flex items-center gap-2 font-medium text-slate-700">
-          <PlusCircle className="size-5 shrink-0" aria-hidden="true" />
-          <span className="text-sm">
-            {venue.reviewCount} {venue.reviewCount === 1 ? "Review" : "Reviews"}
-          </span>
-        </div>
-      </div>
-      <div className="relative size-20 shrink-0 overflow-hidden rounded-md lg:size-24">
-        <img
-          src={venue.imageUrl}
-          alt={venue.imageAlt}
-          className="absolute inset-0 size-full object-cover"
-          loading="lazy"
-        />
-      </div>
+      <h3 className="text-xl font-bold text-slate-800">
+        {venue.name}
+      </h3>
+
+      <p className="mt-1 text-sm text-slate-500">
+        {venue.address.split(",").slice(0, 3).join(",")}
+      </p>
+
+      <p className="text-sm text-slate-500">
+        {venue.city}
+      </p>
+
+      <p className="mt-3 text-sm font-medium text-slate-700">
+        {venue.reviewCount} {venue.reviewCount === 1 ? "Review" : "Reviews"}
+      </p>
     </article>
   );
 }

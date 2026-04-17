@@ -17,7 +17,7 @@ export default function SearchResultItem({ item }: { item: any }) {
       address: item.display_name,
       lat: parseFloat(item.lat),
       lng: parseFloat(item.lon),
-      city: addr.city || addr.town || addr.village || addr.suburb || "Unknown City",
+      city: addr.city || addr.town || addr.village || addr.suburb || item.display_name.split(",")[3]?.trim() || "Unknown City",
       state: addr.state || "N/A",
       zip: addr.postcode || "N/A",
       imageUrl: item.icon,
