@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { addReview } from "@/lib/temp-review-store"; // temp for peer review
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AddReviewPage() {
   const router = useRouter();
   const params = useParams();
   const venueId = params.id as string;
+  const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push(`/login?redirect=/venue/${venueId}/review`);
+    }
+  }, [isLoading, user, router, venueId]);
 
   const [rating, setRating] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -40,6 +48,11 @@ export default function AddReviewPage() {
   };
 
   const handleSubmit = () => {
+    if (!user) {
+      router.push(`/login?redirect=/venue/${venueId}/review`);
+      return;
+    }
+
     const hasAtLeastOneField =
       rating !== null ||
       title.trim().length > 0 ||
@@ -54,6 +67,9 @@ export default function AddReviewPage() {
     const newReview = {
       id: Date.now(), // quick unique id
       locationId: venueId,
+      createdAt: new Date().toISOString(),
+      userId: user.id,
+      userName: user.name,
       title,
       rating,
       comment: text,
@@ -64,6 +80,14 @@ export default function AddReviewPage() {
 
     router.replace(`/venue/${venueId}`);
   };
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white">
+        <p className="animate-pulse text-slate-600">Loading review form...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -137,7 +161,9 @@ export default function AddReviewPage() {
                   <button onClick={() => handleTagChange(tag, "neutral")}>
                     😐
                   </button>
-                  <button onClick={() => handleTagChange(tag, "sad")}>😞</button>
+                  <button onClick={() => handleTagChange(tag, "sad")}>
+                    😞
+                  </button>
                 </div>
               </div>
             );
