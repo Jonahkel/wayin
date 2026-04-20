@@ -56,7 +56,7 @@ export default function SearchResultItem({ item }: { item: any }) {
 
         <div className="mt-6 flex items-center gap-2 font-medium text-slate-700">
           <PlusCircle className="size-6" />
-          <span>"PLZ CONNECT TO DB TO GET NUMBER YALL" Reviews</span>
+          <span>Click to View or Leave Reviews</span>
         </div>
       </div>
 

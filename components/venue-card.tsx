@@ -57,9 +57,10 @@ export function VenueCard({ venue, isSelected, onSelect }: VenueCardProps) {
         {venue.city}
       </p>
 
-      <p className="mt-3 text-sm font-medium text-slate-700">
-        {venue.reviewCount} {venue.reviewCount === 1 ? "Review" : "Reviews"}
-      </p>
+      <div className="mt-6 flex items-center gap-2 font-medium text-slate-700">
+          <PlusCircle className="size-6" />
+          <span>Click to View on Map</span>
+        </div>
     </article>
   );
 }
